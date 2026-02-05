@@ -1,0 +1,37 @@
+# Auto Service Manager
+
+Auto Service Manager is a CodeIgniter 4–based web application designed to manage automobile service centers and workshops.  
+It provides tools for handling booking requests, managing service stations (bays), and operating an admin dashboard with modern UI and AJAX-based interactions.
+
+The project follows clean MVC architecture and is built with scalability and real-world workflows in mind.
+
+---
+
+## 🚗 Features
+
+- Booking request management
+- View individual booking details
+- Reject booking with reason
+- Service station (bay) management  
+  - Washing bays, service bays, repair bays, etc.
+  - Station status control (active, maintenance, inactive)
+  - Capacity handling
+- Admin dashboard
+- AJAX-based actions with toast notifications
+- Clean and reusable UI components
+- Secure database relationships using foreign keys
+
+---
+
+## 🛠 Tech Stack
+
+- **Backend:** PHP (CodeIgniter 4)
+- **Database:** MySQL
+- **Frontend:** Tailwind CSS
+- **JavaScript:** Vanilla JS (Fetch API / AJAX)
+- **Architecture:** MVC (Model–View–Controller)
+
+---
+
+## 📂 Project Structure
+
