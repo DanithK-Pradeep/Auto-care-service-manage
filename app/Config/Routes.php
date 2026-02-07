@@ -35,10 +35,6 @@ $routes->get('/admin/employees/getEmployeeDetails/(:num)', 'AdminAssign::getEmpl
 
 
 
-
-
-
-
 $routes->get('/admin/stations', 'AdminStations::index');
 $routes->post('/admin/stations/store', 'AdminStations::store');
 $routes->post('/admin/stations/status/(:num)', 'AdminStations::changeStatus/$1');
