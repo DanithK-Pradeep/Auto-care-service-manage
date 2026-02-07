@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\StationModel;
 use App\Models\StationTypeModel;
+use App\Models\EmployeeModel;
 
 class AdminStations extends BaseController
 {
@@ -50,10 +51,10 @@ class AdminStations extends BaseController
         $station = $model->find($id);
 
         if (!$station) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Station not found'
-                ], 404);
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Station not found'
+            ], 404);
         }
 
         $nextStatus = match ($station['status']) {
@@ -77,5 +78,31 @@ class AdminStations extends BaseController
             'success' => false,
             'message' => 'Failed to update station status'
         ], 500);
+    }
+
+    public function employees($stationId)
+    {
+        if (!session()->get('admin_logged_in')) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ]);
+        }
+
+        $employeeModel = new EmployeeModel();
+
+        // ✅ Get employees assigned to this station 
+        $employees = $employeeModel
+            ->select('employees.id, employees.first_name, employees.last_name')
+            ->join('employee_station', 'employee_station.employee_id = employees.id', 'inner')
+            ->where('employee_station.station_id', $stationId)
+            ->where('employees.status', 'active')
+            ->orderBy('employees.first_name', 'ASC')
+            ->findAll();
+
+        return $this->response->setJSON([
+            'success' => true,
+            'employees' => $employees
+        ]);
     }
 }

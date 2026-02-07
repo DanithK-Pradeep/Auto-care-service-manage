@@ -19,6 +19,10 @@ $routes->get('/admin/logout', 'AdminAuth::logout');
 $routes->get('/admin/bookings', 'AdminBookings::index');
 $routes->post('/admin/bookings/reject','AdminBookings::rejectBooking');
 $routes->get('/admin/bookings/view/(:num)','AdminBookings::view/$1');
+$routes->post('/admin/bookings/approve','AdminBookings::approve');
+$routes->get('/admin/bookings/approve/(:num)','AdminBookings::approve/$1');
+
+
 
 $routes->get('/admin/employees', 'AdminEmployees::dashboard');
 $routes->get('/admin/employees/create', 'AdminEmployees::create');
@@ -32,12 +36,10 @@ $routes->get('/admin/employees/assign', 'AdminEmployees::assign');
 $routes->post('/admin/employees/assign', 'AdminAssign::store');
 $routes->get('/admin/employees/getEmployeeDetails/(:num)', 'AdminAssign::getEmployeeDetails/$1');
 
-
-
-
 $routes->get('/admin/stations', 'AdminStations::index');
 $routes->post('/admin/stations/store', 'AdminStations::store');
 $routes->post('/admin/stations/status/(:num)', 'AdminStations::changeStatus/$1');
+$routes->get('/admin/stations/(:num)/employees', 'AdminStations::employees/$1');
 
 
 
