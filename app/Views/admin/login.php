@@ -25,13 +25,14 @@
 
         <input type="password" name="password" placeholder="Password" class="w-full border p-3 mb-6 rounded" />
 
-        <div class="flex items-center justify-between">
-            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+        <div class="flex flex-col gap-4">
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
                 Login
             </button>
-            <a href="<?= site_url('/') ?>" class="bg-blue-100 text-gray-900 px-4 py-2 rounded hover:bg-blue-200">
+            <a href="<?= site_url('/') ?>" class="w-full bg-gray-300 hover:bg-gray-400 text-white text-center font-semibold py-2 rounded-lg">
                 Back to Home
             </a>
+        </div>
     </form>
 
 </body>

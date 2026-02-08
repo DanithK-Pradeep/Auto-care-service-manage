@@ -13,6 +13,7 @@ use CodeIgniter\Filters\PageCache;
 use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 
+
 class Filters extends BaseFilters
 {
     /**
@@ -36,6 +37,9 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'adminAuth'     => \App\Filters\AdminAuthFilter::class,
         'csrfFilter'    => \App\Filters\CSRFFilter::class,
+        'employeeAuth'  => \App\Filters\EmployeeAuthFilter::class,
+        
+
 
     ];
 

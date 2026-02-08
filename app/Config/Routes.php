@@ -43,3 +43,16 @@ $routes->get('/admin/stations/(:num)/employees', 'AdminStations::employees/$1');
 
 
 
+
+$routes->get('employee/login', 'EmployeeAuth::login');
+$routes->post('employee/login', 'EmployeeAuth::attemptLogin');
+$routes->get('employee/logout', 'EmployeeAuth::logout');
+
+$routes->group('employee', ['filter' => 'employeeAuth'], function($routes) {
+    $routes->get('dashboard', 'EmployeeDashboard::index');
+    $routes->get('empdetail', 'EmployeeDashboard::details');
+
+
+});
+
+
