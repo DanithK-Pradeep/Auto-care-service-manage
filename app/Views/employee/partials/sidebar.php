@@ -16,8 +16,20 @@
            <?= ($activeMenu ?? '') === 'empdetail'
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-700 hover:bg-gray-100' ?>">
-            📋 Employee Details
+             👨‍💼 Employee Details
         </a>
+
+        <!--booking-->
+        <a href="<?= site_url('employee/bookings') ?>"
+            class="block px-4 py-2 rounded
+           <?= ($activeMenu ?? '') === 'bookings'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:bg-gray-100' ?>">
+            📋 Bookings
+        </a>
+
+
+
         <!-- employees 
         <a href="<?= site_url('employee/employees') ?>"
             class="block px-4 py-2 rounded

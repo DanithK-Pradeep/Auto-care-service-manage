@@ -52,20 +52,21 @@
                                 onclick="openApproveModal(<?= $booking['id'] ?>)"
                                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-1 rounded">
                                 Approve
+                            </button>
 
-                                <!-- REJECT -->
-                                <button
-                                    onclick="openRejectModal(<?= $booking['id'] ?>)"
-                                    class="bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 rounded">
-                                    Reject
-                                </button>
+                            <!-- REJECT -->
+                            <button
+                                onclick="openRejectModal(<?= $booking['id'] ?>)"
+                                class="bg-red-600 hover:bg-red-700 text-white font-bold px-2 py-1 rounded">
+                                Reject
+                            </button>
 
-                            <?php endif; ?>
+                        <?php endif; ?>
 
-                            <a href="<?= site_url('admin/bookings/view/' . $booking['id']) ?>"
-                                class="bg-green-600 hover:bg-green-700 text-white font-bold px-2 py-1 rounded">
-                                View
-                            </a>
+                        <a href="<?= site_url('admin/bookings/view/' . $booking['id']) ?>"
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold px-2 py-1 rounded">
+                            View
+                        </a>
 
                     </td>
 
@@ -203,6 +204,7 @@
 
 
 <script>
+    //
     document.addEventListener('DOMContentLoaded', () => {
 
         function openRejectModal(id) {

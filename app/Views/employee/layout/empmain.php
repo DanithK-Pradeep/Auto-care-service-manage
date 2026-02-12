@@ -52,7 +52,11 @@
     <!-- FOOTER -->
     <?= $this->include('employee/partials/footer') ?>
 
-    <?= view('/components/ajax_toast') ?>
+    <?= view('components/ajax_toast') ?>
+
+    <script src="<?= base_url('assets/js/ajax-toast.js') ?>"></script>
+
+
 
 
 

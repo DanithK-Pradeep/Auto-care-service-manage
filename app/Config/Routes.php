@@ -48,9 +48,14 @@ $routes->get('employee/login', 'EmployeeAuth::login');
 $routes->post('employee/login', 'EmployeeAuth::attemptLogin');
 $routes->get('employee/logout', 'EmployeeAuth::logout');
 
+
 $routes->group('employee', ['filter' => 'employeeAuth'], function($routes) {
     $routes->get('dashboard', 'EmployeeDashboard::index');
     $routes->get('empdetail', 'EmployeeDashboard::details');
+    $routes->get('bookings', 'EmployeeDashboard::bookings');
+    $routes->post('approve', 'EmployeeDashboard::approve');
+    $routes->get('getBookingDetails/(:num)', 'EmployeeDashboard::getBookingDetails/$1');
+    
 
 
 });

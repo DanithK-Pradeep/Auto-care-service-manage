@@ -8,4 +8,5 @@
   };
 </script>
 
-<script src="<?= base_url('js/ajax-toast.js') ?>"></script>
+<script src="<?= base_url('assets/js/ajax-toast.js') ?>"></script>
+
