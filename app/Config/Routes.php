@@ -5,6 +5,8 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
+
+
 $routes->get('/', 'Home::index');
 $routes->get('services/(:segment)', 'Services::detail/$1');
 $routes->get('book-service', 'Booking::index');
@@ -17,10 +19,10 @@ $routes->get('/admin/logout', 'AdminAuth::logout');
 
 
 $routes->get('/admin/bookings', 'AdminBookings::index');
-$routes->post('/admin/bookings/reject','AdminBookings::rejectBooking');
-$routes->get('/admin/bookings/view/(:num)','AdminBookings::view/$1');
-$routes->post('/admin/bookings/approve','AdminBookings::approve');
-$routes->get('/admin/bookings/approve/(:num)','AdminBookings::approve/$1');
+$routes->post('/admin/bookings/reject', 'AdminBookings::rejectBooking');
+$routes->get('/admin/bookings/view/(:num)', 'AdminBookings::view/$1');
+$routes->post('/admin/bookings/approve', 'AdminBookings::approve');
+$routes->get('/admin/bookings/approve/(:num)', 'AdminBookings::approve/$1');
 
 
 
@@ -49,15 +51,18 @@ $routes->post('employee/login', 'EmployeeAuth::attemptLogin');
 $routes->get('employee/logout', 'EmployeeAuth::logout');
 
 
-$routes->group('employee', ['filter' => 'employeeAuth'], function($routes) {
+$routes->group('employee', ['filter' => 'employeeAuth'], function ($routes) {
     $routes->get('dashboard', 'EmployeeDashboard::index');
     $routes->get('empdetail', 'EmployeeDashboard::details');
     $routes->get('bookings', 'EmployeeDashboard::bookings');
     $routes->post('approve', 'EmployeeDashboard::approve');
     $routes->get('getBookingDetails/(:num)', 'EmployeeDashboard::getBookingDetails/$1');
+    $routes->get('services', 'EmployeeDashboard::services');
+    $routes->post('process/start', 'EmployeeDashboard::startProcess');
+    $routes->post('process/finish', 'EmployeeDashboard::finishProcess');
+    $routes->post('jobstep/done', 'EmployeeDashboard::doneJobStep');
+    $routes->post('jobstep/skip', 'EmployeeDashboard::skipJobStep');
+    $routes->post('assign-next', 'EmployeeDashboard::assignNext');
+
     
-
-
 });
-
-

@@ -241,6 +241,9 @@
 
                         closeApproveModal();
                         showToast("Successfully approved booking!", "success");
+                        
+                        window.location.href = "<?= site_url('employee/services') ?>";
+
 
                     } else {
                         showToast(data.message || "Failed to approve booking", "error");
