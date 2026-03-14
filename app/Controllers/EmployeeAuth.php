@@ -20,33 +20,36 @@ class EmployeeAuth extends BaseController
 
     public function attemptLogin()
     {
-        $email = trim((string)$this->request->getPost('email'));
+        $email    = trim((string)$this->request->getPost('email'));
         $password = (string)$this->request->getPost('password');
 
         if ($email === '' || $password === '') {
-            return redirect()->back()->with('error', 'Email and password are required');
+            session()->setFlashdata('error', 'Email and password are required');
+            return redirect()->to(site_url('employee/login'))->withInput();
         }
 
         $employeeModel = new EmployeeModel();
         $emp = $employeeModel->where('email', $email)->first();
 
-        // don’t reveal which one is wrong (security)
         if (!$emp || empty($emp['password']) || !password_verify($password, $emp['password'])) {
-            return redirect()->back()->with('error', 'Invalid email or password');
+            session()->setFlashdata('error', 'Invalid email or password');
+            return redirect()->to(site_url('employee/login'))->withInput();
         }
 
         if (($emp['status'] ?? 'active') !== 'active') {
-            return redirect()->back()->with('error', 'Your account is inactive');
+            session()->setFlashdata('warning', 'Your account is inactive');
+            return redirect()->to(site_url('employee/login'))->withInput();
         }
 
         session()->set([
             'employee_logged_in' => true,
             'employee_id'        => $emp['id'],
-            'employee_name'      => ($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? ''),
+            'employee_name'      => trim(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? '')),
             'employee_email'     => $emp['email'],
             'employee_role'      => $emp['role'] ?? null,
         ]);
 
+        session()->setFlashdata('success', 'Login successful');
         return redirect()->to(site_url('employee/dashboard'));
     }
 
@@ -60,6 +63,7 @@ class EmployeeAuth extends BaseController
             'employee_role',
         ]);
 
-        return redirect()->to(site_url('employee/login'))->with('success', 'Logged out');
+        session()->setFlashdata('success', 'Logged out successfully');
+        return redirect()->to(site_url('employee/login'));
     }
 }

@@ -21,9 +21,9 @@
             <p class="text-green-600 mb-4"><?= session()->getFlashdata('success') ?></p>
         <?php endif; ?>
 
-        <input name="username" placeholder="Username" class="w-full border p-3 mb-4 rounded" />
+        <input name="username" placeholder="Username" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6" />
 
-        <input type="password" name="password" placeholder="Password" class="w-full border p-3 mb-6 rounded" />
+        <input type="password" name="password" placeholder="Password" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 " />
 
         <div class="flex flex-col gap-4">
             <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">

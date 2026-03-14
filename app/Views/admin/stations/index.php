@@ -2,7 +2,7 @@
 
 <?= $this->section('content') ?>
 
-<?= $this->include('admin/components/toast') ?>
+
 
 
 <div class="max-w-7xl mx-auto p-6">

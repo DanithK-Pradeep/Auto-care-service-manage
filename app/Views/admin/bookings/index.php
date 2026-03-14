@@ -121,8 +121,7 @@
             <!-- Notes -->
             <label class="block mt-4 mb-2 text-sm font-medium text-gray-700"> Notes (optional) </label>
             <textarea name="notes" id="approveNotes" rows="3"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none">
-                </textarea>
+                class="text-left w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"></textarea>
 
             <div class="mt-6 flex justify-end gap-2">
                 <button type="button"

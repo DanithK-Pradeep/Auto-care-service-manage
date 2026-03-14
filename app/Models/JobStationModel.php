@@ -17,10 +17,9 @@ class JobStationModel extends Model
         'sequence_no',
         'status',
         'assigned_employee_id',
-        'start_time',
         'end_time',
-        'notes',
         'updated_at',
+        'created_at'
     ];
 
 

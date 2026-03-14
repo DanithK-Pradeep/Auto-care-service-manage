@@ -15,6 +15,7 @@ class EmployeeModel extends Model
         'last_name',
         'phone',
         'email',
+        'hourly_rate',
         'password',
         'role',
         'status'

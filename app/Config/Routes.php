@@ -62,7 +62,24 @@ $routes->group('employee', ['filter' => 'employeeAuth'], function ($routes) {
     $routes->post('process/finish', 'EmployeeDashboard::finishProcess');
     $routes->post('jobstep/done', 'EmployeeDashboard::doneJobStep');
     $routes->post('jobstep/skip', 'EmployeeDashboard::skipJobStep');
-    $routes->post('assign-next', 'EmployeeDashboard::assignNext');
-
+    $routes->post('services/stations', 'EmployeeDashboard::loadstations');
+    $routes->get('services/employees', 'EmployeeDashboard::loademployees');
+    $routes->post('assign_next', 'EmployeeDashboard::assignNext');
+    $routes->get('bookings/view-data/(:num)', 'EmployeeDashboard::viewBookingData/$1');
     
 });
+
+$routes->group('employee/spare', ['filter' => 'employeeAuth'], function ($routes) {
+    $routes->get('categories', 'SparePartsController::categories');
+    $routes->get('items', 'SparePartsController::items');
+    $routes->get('usage', 'SparePartsController::usage');
+
+    $routes->post('use', 'SparePartsController::use');
+    $routes->post('use/remove', 'SparePartsController::removeUsage');
+});
+
+$routes->get('employee/attendance', 'EmployeeAttendance::index');
+$routes->post('employee/attendance/checkIn', 'EmployeeAttendance::checkIn');
+$routes->post('employee/attendance/checkOut', 'EmployeeAttendance::checkOut');
+$routes->post('employee/attendance/applyLeave', 'EmployeeAttendance::applyLeave');
+$routes->get('employee/attendance/getFullHistory', 'EmployeeAttendance::fetchFullHistory');

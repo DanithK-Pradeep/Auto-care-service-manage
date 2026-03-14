@@ -38,8 +38,8 @@
                 : 'text-gray-700 hover:bg-gray-100' ?>">
             👷 Employees
         </a>
-
 -->
+
         <!-- Services -->
         <a href="<?= site_url('employee/services') ?>"
             class="block px-4 py-2 rounded
@@ -47,6 +47,15 @@
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-700 hover:bg-gray-100' ?>">
             🛠️ Services
+        </a>
+
+        <!--Attendance-->
+        <a href="<?= site_url('employee/attendance') ?>"
+            class="block px-4 py-2 rounded
+           <?= ($activeMenu ?? '') === 'attendance'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:bg-gray-100' ?>">
+            📚 Attendance
         </a>
 
     </nav>

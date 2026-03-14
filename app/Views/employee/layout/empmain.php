@@ -10,6 +10,8 @@
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 
 <!-- Simple base styles -->
@@ -43,7 +45,7 @@
         <?= $this->include('employee/partials/sidebar') ?>
 
         <!-- PAGE CONTENT -->
-        <main class="employee-content">
+        <main class="admin-content w-full overflow-hidden">
             <?= $this->renderSection('content') ?>
         </main>
 
@@ -54,12 +56,7 @@
 
     <?= view('components/ajax_toast') ?>
 
-    <script src="<?= base_url('assets/js/ajax-toast.js') ?>"></script>
-
-
-
-
-
+    
 </body>
 
 </html>
