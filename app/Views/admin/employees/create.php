@@ -11,7 +11,7 @@
     <div class="mb-4 h-1 bg-red-600"></div>
 
 
-    <form method="post" action="<?= site_url('admin/employees/store') ?>"class="bg-white shadow rounded-lg p-6 space-y-4">
+    <form method="post" action="<?= site_url('admin/employees/store') ?>" class="bg-white shadow rounded-lg p-6 space-y-4">
         <?= csrf_field() ?>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -73,14 +73,17 @@
 
             <div>
                 <label class="block text-sm font-medium mb-1">Role</label>
-                <select name="role" required
-                    class="w-full border rounded px-3 py-2">
+                <select name="role" required class="w-full border rounded px-3 py-2">
                     <option value="">-- Select Role --</option>
-                    <option value="Technician">Technician</option>
-                    <option value="Washer">Washer</option>
-                    <option value="Painter">Painter</option>
-                    <option value="Inspector">Inspector</option>
-                    <option value="Supervisor">Supervisor</option>
+
+                    <?php if (!empty($roles)): ?>
+                        <?php foreach ($roles as $row): ?>
+                            <option value="<?= esc($row['role_name']) ?>">
+                                <?= esc($row['role_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
                 </select>
             </div>
 

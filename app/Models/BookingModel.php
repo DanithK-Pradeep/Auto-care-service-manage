@@ -9,8 +9,8 @@ class BookingModel extends Model
     protected $table = 'bookings';
     protected $primaryKey = 'id';
 
+    
     protected $allowedFields = [
-
         'name',
         'phone',
         'service',
@@ -18,13 +18,23 @@ class BookingModel extends Model
         'message',
         'booking_date',
         'status',
-        'reject_reason'
+        'reject_reason',
         
-        
+        // --- Inspector 
+        'completed_at',
+        'final_notes',
+        'completed_by',
 
         
-        
+        // --- Supervisor 
+        'service_charge',
+        'spare_parts_cost',
+        'discount',
+        'net_total',
+        'payment_method',
+        'released_at'
     ];
+
     protected $useTimestamps = true;
     protected $returnType = 'array';
 }

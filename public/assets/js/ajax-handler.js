@@ -1,124 +1,124 @@
 /**
- * AJAX Form Handler for Toast Notifications
- * Handles form submissions with AJAX and displays toast notifications
- * 
- * Usage:
- * <form class="ajax-form" method="POST" action="/path">
- *     ... form fields ...
- * </form>
+ * Global AJAX Form Handler & Request Utility
+ * Automatically handles any form with the class ".ajax-form"
+ * Required: showToast() must be defined globally.
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    const ajaxForms = document.querySelectorAll('.ajax-form');
-    
-    ajaxForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
+/* ---------- Helper: Safe JSON Parsing ---------- */
+async function parseResponseAsJsonSafe(response) {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) return response.json();
+
+    const text = await response.text();
+    try {
+        return JSON.parse(text);
+    } catch {
+        // Fallback for non-JSON responses
+        return { success: response.ok, message: "Server response received" };
+    }
+}
+
+/* ---------- Main: Form Submission Interceptor ---------- */
+document.addEventListener("DOMContentLoaded", function () {
+    const ajaxForms = document.querySelectorAll(".ajax-form");
+
+    ajaxForms.forEach((form) => {
+        form.addEventListener("submit", async function (e) {
             e.preventDefault();
-            
-            const formData = new FormData(this);
-            const url = this.getAttribute('action');
-            const method = this.getAttribute('method') || 'POST';
-            
-            // Disable submit button
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-            }
-            
-            fetch(url, {
-                method: method,
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    return response.json();
-                }
-                return response.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        return { success: response.ok, message: 'Operation completed' };
-                    }
+
+            const formData = new FormData(form);
+            const url = form.getAttribute("action");
+            const method = (form.getAttribute("method") || "POST").toUpperCase();
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Prevent double-submissions
+            if (submitBtn) submitBtn.disabled = true;
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    body: formData,
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
                 });
-            })
-            .then(data => {
-                // Show toast notification
+
+                const data = await parseResponseAsJsonSafe(res);
+
                 if (data.success) {
-                    showToast(data.message || 'Success!', 'success');
-                    // Reset form
+                    showToast(data.message || "Success!", "success");
                     form.reset();
 
-                    // If server returned updated station info, update the UI in-place
+                    /**
+                     * UI Update Hook: Updates status badges in tables
+                     * Expected backend keys: { station_id, new_status }
+                     */
                     if (data.station_id && data.new_status) {
-                        // find the row containing this form
-                        const row = form.closest('tr');
-                        if (row) {
-                            const badge = row.querySelector('td span');
-                            if (badge) {
-                                // remove existing status classes
-                                badge.classList.remove('bg-green-600', 'bg-red-600', 'bg-yellow-500');
-                                // add new class based on status
-                                if (data.new_status === 'active') badge.classList.add('bg-green-600');
-                                else if (data.new_status === 'inactive') badge.classList.add('bg-red-600');
-                                else if (data.new_status === 'maintenance') badge.classList.add('bg-yellow-500');
-                                // update text
-                                badge.textContent = data.new_status.charAt(0).toUpperCase() + data.new_status.slice(1);
+                        const row = form.closest("tr");
+                        const badge = row?.querySelector("td span");
+                        if (badge) {
+                            // Reset color classes before applying new ones
+                            badge.classList.remove("bg-green-600", "bg-red-600", "bg-yellow-500");
+                            
+                            const statusMap = {
+                                active: "bg-green-600",
+                                inactive: "bg-red-600",
+                                maintenance: "bg-yellow-500"
+                            };
+
+                            if (statusMap[data.new_status]) {
+                                badge.classList.add(statusMap[data.new_status]);
                             }
+                            
+                            badge.textContent = data.new_status.charAt(0).toUpperCase() + data.new_status.slice(1);
                         }
                     }
 
-                    // Optional: Redirect if provided
+                    // Optional Redirect (e.g., after login or delete)
                     if (data.redirect) {
-                        setTimeout(() => {
-                            window.location.href = data.redirect;
-                        }, 1000);
+                        setTimeout(() => (window.location.href = data.redirect), 1000);
                     }
                 } else {
-                    showToast(data.message || 'An error occurred', 'error');
+                    showToast(data.message || "Operation failed", "error");
                 }
-            })
-            .catch(error => {
-                showToast(error.message || 'Network error', 'error');
-            })
-            .finally(() => {
-                // Re-enable submit button
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                }
-            });
+            } catch (error) {
+                showToast("Network error: " + error.message, "error");
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
+            }
         });
     });
 });
 
 /**
- * Fetch helper for AJAX requests with toast notifications
- * Usage: ajaxRequest('POST', '/admin/stations/store', formData)
+ * Manual Request Helper
+ * Use this for clicks or script-based triggers (e.g., Delete buttons)
+ * Usage: ajaxRequest('GET', '/api/data').then(data => console.log(data));
  */
-function ajaxRequest(method, url, data = null) {
-    return fetch(url, {
-        method: method,
-        body: data instanceof FormData ? data : JSON.stringify(data),
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': data instanceof FormData ? undefined : 'application/json'
+window.ajaxRequest = async function (method, url, data = null) {
+    const isFormData = data instanceof FormData;
+    
+    try {
+        const options = {
+            method: method.toUpperCase(),
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        };
+
+        if (data) {
+            options.body = isFormData ? data : JSON.stringify(data);
+            if (!isFormData) options.headers["Content-Type"] = "application/json";
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message || 'Success!', 'success');
+
+        const res = await fetch(url, options);
+        const responseData = await parseResponseAsJsonSafe(res);
+
+        if (responseData.success) {
+            showToast(responseData.message || "Done!", "success");
         } else {
-            showToast(data.message || 'An error occurred', 'error');
+            showToast(responseData.message || "Error", "error");
         }
-        return data;
-    })
-    .catch(error => {
-        showToast('Network error: ' + error.message, 'error');
+
+        return responseData;
+    } catch (error) {
+        showToast("Network error", "error");
         throw error;
-    });
-}
+    }
+};

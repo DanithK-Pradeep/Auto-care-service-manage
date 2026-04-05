@@ -6,6 +6,7 @@ use App\Models\EmployeeModel;
 use App\Models\StationModel;
 use App\Models\StationTypeModel;
 use App\Models\AssignModel;
+use App\Models\RoleModel;
 use Config\Services;
 
 class AdminEmployees extends BaseController
@@ -44,17 +45,23 @@ class AdminEmployees extends BaseController
 
 
     public function create()
-    {
-        if (!session()->get('admin_logged_in')) {
-            return redirect()->to('/admin/login');
-        }
-
-        return view('admin/employees/create', [
-            'title' => 'Add Employee',
-            'activeMenu' => 'employees'
-        ]);
+{
+    // 1. Check if admin is logged in
+    if (!session()->get('admin_logged_in')) {
+        return redirect()->to('/admin/login');
     }
 
+    // 2. Fetch the roles from the database
+    $roleModel = new RoleModel();
+    $roles = $roleModel->findAll();
+
+    // 3. Pass everything to the view
+    return view('admin/employees/create', [
+        'title'      => 'Add Employee',
+        'activeMenu' => 'employees',
+        'roles'      => $roles 
+    ]);
+}
     public function store()
     {
         if (!session()->get('admin_logged_in')) {

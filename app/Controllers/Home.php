@@ -152,14 +152,12 @@ class Home extends BaseController
             ],
             [
                 'label' => '',
-                'url'   => site_url('/admin/login'),
+                'url'   => site_url('/employee/login'),
                 'match'   => 'login',
                 'button' => false,
             ],
 
-            
-
-            
+        
 
         ];
 

@@ -1,4 +1,4 @@
-<?= $this->extend('employee/layout/empmain'); ?>
+<?= $this->extend($main_layout); ?>
 <?= $this->section('content'); ?>
 <?= $this->include('components/ajax_toast') ?>
 
@@ -40,7 +40,7 @@
                                     'in_progress' => 'bg-blue-100 text-blue-700 border-blue-200',
                                     'completed' => 'bg-green-100 text-green-700 border-green-200',
                                     'cancelled' => 'bg-red-100 text-red-700 border-red-200',
-                                    default => 'bg-gray-300 text-gray-700 blorder-gray-200',
+                                    default => 'bg-gray-300 text-gray-700 border-gray-200',
                                 };
                                 ?>
                                 <span id="status-badge-<?= $booking['id'] ?>"
@@ -51,19 +51,20 @@
                             </td>
 
 
-                            <td class="p-4">
+                            <td class="p-4 text-center">
                                 <div id="action-buttons-<?= $booking['id'] ?>" class="flex justify-center gap-2">
-                                    <?php if ($booking['status'] !== 'in_progress' && $booking['status'] !== 'completed' && $booking['status'] !== 'handed_over'): ?>
+
+                                    <?php if ($booking['status'] === 'assigned'): ?>
                                         <button type="button"
-                                            class="px-4 py-2 bg-green-600 text-sm text-white rounded hover:bg-green-700"
-                                            onclick="openApproveModal(<?= (int)$booking['id'] ?>, <?= (int)$booking['booking_id'] ?>)">
+                                            class="px-4 py-2 bg-green-600 text-sm text-white rounded hover:bg-green-700 shadow-sm transition-all"
+                                            onclick="openApproveModal(<?= (int)$booking['id'] ?>)">
                                             Approve
                                         </button>
                                     <?php endif; ?>
 
                                     <button type="button"
-                                        class="px-4 py-2 bg-blue-600 text-sm text-white rounded hover:bg-blue-700"
-                                        onclick="openViewModal(<?= (int)$booking['booking_id'] ?>)">
+                                        class="px-4 py-2 bg-blue-600 text-sm text-white rounded hover:bg-blue-700 shadow-sm"
+                                        onclick="openViewModal(<?= (int)$booking['booking_id'] ?> ?>)">
                                         View
                                     </button>
                                 </div>
@@ -74,7 +75,7 @@
                     <?php endforeach; ?>
                 <?php else : ?>
                     <tr>
-                        <td colspan="5" class="p-4 text-center text-gray-500">No bookings assigned yet.</td>
+                        <td colspan="8" class="p-4 text-center text-gray-500">No bookings assigned yet.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -257,6 +258,7 @@
                                     <th class="p-3">Assigned At</th>
                                     <th class="p-3">Started At</th>
                                     <th class="p-3">Finished At</th>
+                                    <th class="p-3">Note</th>
                                     <th class="p-3">Status</th>
                                 </tr>
                             </thead>
@@ -523,6 +525,7 @@
                     <td class="p-3">${esc(val(a.assigned_at))}</td>
                     <td class="p-3">${esc(val(a.started_at))}</td>
                     <td class="p-3">${esc(val(a.completed_at))}</td>
+                    <td class="p-3">${esc(val(a.notes))}</td>
                     <td class="p-3 text-center">${statusPill(a.status)}</td>
                 </tr>
             `).join("") : '<tr><td colspan="7" class="p-4 text-center">No history</td></tr>';
@@ -571,7 +574,7 @@
             const s = String(status || "pending").toLowerCase();
             let cls = "px-2 py-1 rounded-full text-xs font-bold border ";
             if (["done", "completed"].includes(s)) cls += "bg-green-100 text-green-700 border-green-200";
-            else if (s === "in_progress") cls += "bg-blue-100 text-blue-700 border-blue-200";
+            else if (s === "handed_over") cls += "bg-blue-100 text-blue-700 border-blue-200";
             else cls += "bg-gray-100 text-gray-700 border-gray-200";
 
             return `<span class="${cls}">${s.toUpperCase()}</span>`;
@@ -590,6 +593,8 @@
         function val(v) {
             return (v === null || v === undefined || v === "") ? "-" : v;
         }
+
+
     });
 </script>
 

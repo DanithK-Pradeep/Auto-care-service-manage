@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # PHP Application Service
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - autocare-network
+
+  # MySQL Database Service
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: autocare
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - autocare-network
+
+networks:
+  autocare-network:
+    driver: bridge
+
+volumes:
+  db_data:

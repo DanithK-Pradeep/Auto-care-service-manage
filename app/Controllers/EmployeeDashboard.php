@@ -39,83 +39,134 @@ class EmployeeDashboard extends BaseController
 
     public function index()
     {
+        $layout = $this->request->isAJAX() ? 'employee/layout/blank' : 'employee/layout/empmain';
         $employeeId = session()->get('employee_id');
         $db = \Config\Database::connect();
         $today = date('Y-m-d');
 
-        // 1. Top Row Quick Stats (KPIs)
-        $assignedCount = $db->table('booking_assignments')
-            ->where('employee_id', $employeeId)
-            ->where('status', 'assigned')
+
+        // 1. Completed count only
+        $completedCount = $db->table('bookings')
+            ->where('status', 'completed')
             ->countAllResults();
 
-        $inProgressCount = $db->table('booking_assignments')
-            ->where('employee_id', $employeeId)
-            ->whereIn('status', ['in_progress', 'completed']) // Currently active
+        // 2. Released count only
+        $releasedCount = $db->table('bookings')
+            ->where('status', 'released')
             ->countAllResults();
 
-        $handedOverToday = $db->table('booking_assignments')
-            ->where('employee_id', $employeeId)
-            ->where('status', 'handed_over')
-            ->like('completed_at', $today, 'after') // Matches anything completed today
-            ->countAllResults();
+        // 3. Total finished (completed + released)
+        $totalFinished = $completedCount + $releasedCount;
 
-        $attendanceModel = new AttendanceModel();
+        // getting role for conditional data fetching
+        $role = strtolower(trim(session()->get('employee_role') ?? ''));
+
+
+        // Today's attendance record for the logged-in employee (if any)
+        $attendanceModel = new AttendanceModel(); // Initialize the model
         $todayRecord = $attendanceModel->where('employee_id', $employeeId)
-            ->where('work_date', date('Y-m-d'))
+            ->where('work_date', $today)
             ->first();
 
-
-
-        // 2. Simple Strike Rate (Efficiency for Today)
-        // Formula: (Completed Work / Total Work Given Today) * 100
-        $totalWorkToday = $assignedCount + $inProgressCount + $handedOverToday;
-        $strikeRate = ($totalWorkToday > 0) ? round(($handedOverToday / $totalWorkToday) * 100) : 0;
-
-        // 3. Weekly Performance Data (Last 7 Days for the Bar Chart)
-        $sevenDaysAgo = date('Y-m-d', strtotime('-7 days'));
-        $weeklyData = $db->table('booking_assignments')
-            ->select('DATE(completed_at) as work_date, COUNT(id) as total_completed')
-            ->where('employee_id', $employeeId)
-            ->where('status', 'handed_over')
-            ->where('completed_at >=', $sevenDaysAgo)
-            ->groupBy('DATE(completed_at)')
-            ->orderBy('work_date', 'ASC')
-            ->get()->getResultArray();
-
-        // Format the weekly data for Chart.js
-        $chartLabels = [];
-        $chartValues = [];
-        foreach ($weeklyData as $row) {
-            $chartLabels[] = date('D', strtotime($row['work_date'])); // Converts to 'Mon', 'Tue'
-            $chartValues[] = $row['total_completed'];
-        }
-
-        // 4. "Up Next" Queue (To show waiting vehicles directly on the dashboard)
-        $upNextQueue = $db->table('booking_assignments')
-            ->select('booking_assignments.*, bookings.vehicle_model, stations.name as station_name')
-            ->join('bookings', 'bookings.id = booking_assignments.booking_id')
-            ->join('stations', 'stations.id = booking_assignments.station_id')
-            ->where('booking_assignments.employee_id', $employeeId)
-            ->where('booking_assignments.status', 'assigned')
-            ->orderBy('booking_assignments.assigned_at', 'ASC')
-            ->limit(5) // Only show the next 5 vehicles
-            ->get()->getResultArray();
-
-        // Pass everything to the view
+        // Base Data Array 
         $data = [
-            'title'           => 'My Dashboard',
-            'assignedCount'   => $assignedCount,
-            'todayRecord'     => $todayRecord,
-            'inProgressCount' => $inProgressCount,
-            'handedOverToday' => $handedOverToday,
-            'strikeRate'      => $strikeRate,
-            'chartLabels'     => json_encode($chartLabels), // JSON encode for JavaScript
-            'chartValues'     => json_encode($chartValues), // JSON encode for JavaScript
-            'upNextQueue'     => $upNextQueue
+            'title'       => 'My Dashboard',
+            'activeMenu'  => 'dashboard',
+            'todayRecord' => $todayRecord
         ];
 
-        return view('employee/dashboard', $data);
+        // Supervisor dashboard
+        if ($role === 'supervisor') {
+
+            // 1. Awaiting Approvals
+            $data['awaitingCount'] = $db->table('booking_assignments')
+                ->where('employee_id', $employeeId)
+                ->where('status', 'assigned')
+                ->countAllResults();
+
+            // 2. In Progress bookings
+            $data['inProgressCount'] = $db->table('booking_assignments ba')
+                ->join('bookings b', 'b.id = ba.booking_id')
+                ->where('ba.employee_id', $employeeId)
+                ->where('ba.status', 'in_progress')
+                ->where('b.status !=', 'completed')
+                ->countAllResults();
+
+            // 3. Ready for Billing
+            $data['readyForBillingCount'] = $db->table('booking_assignments ba')
+                ->join('bookings b', 'b.id = ba.booking_id')
+                ->where('ba.employee_id', $employeeId)
+                ->where('ba.status', 'in_progress')
+                ->where('b.status', 'completed')
+                ->countAllResults();
+
+            $data['totalFinishedCount'] = $db->table('bookings')
+                ->whereIn('status', ['completed', 'released'])
+                ->countAllResults();
+
+            //mechanic dashboard
+        } else {
+
+            // 1. Top Row Quick Stats (KPIs)
+            $assignedCount = $db->table('booking_assignments')
+                ->where('employee_id', $employeeId)
+                ->where('status', 'assigned')
+                ->countAllResults();
+
+            $inProgressCount = $db->table('booking_assignments')
+                ->where('employee_id', $employeeId)
+                ->whereIn('status', ['in_progress', 'completed']) // Currently active
+                ->countAllResults();
+
+            $handedOverToday = $db->table('booking_assignments')
+                ->where('employee_id', $employeeId)
+                ->where('status', 'handed_over')
+                ->countAllResults();
+
+            // 2. Simple Strike Rate
+            $totalWorkToday = $assignedCount + $inProgressCount + $handedOverToday;
+            $strikeRate = ($totalWorkToday > 0) ? round(($handedOverToday / $totalWorkToday) * 100) : 0;
+
+            // 3. Weekly Performance Data (Last 7 Days)
+            $sevenDaysAgo = date('Y-m-d', strtotime('-7 days'));
+            $weeklyData = $db->table('booking_assignments')
+                ->select('DATE(completed_at) as work_date, COUNT(id) as total_completed')
+                ->where('employee_id', $employeeId)
+                ->where('status', 'handed_over')
+                ->where('completed_at >=', $sevenDaysAgo)
+                ->groupBy('DATE(completed_at)')
+                ->orderBy('work_date', 'ASC')
+                ->get()->getResultArray();
+
+            $chartLabels = [];
+            $chartValues = [];
+            foreach ($weeklyData as $row) {
+                $chartLabels[] = date('D', strtotime($row['work_date']));
+                $chartValues[] = $row['total_completed'];
+            }
+
+            // 4. "Up Next" Queue 
+            $upNextQueue = $db->table('booking_assignments')
+                ->select('booking_assignments.*, bookings.vehicle_model, stations.name as station_name')
+                ->join('bookings', 'bookings.id = booking_assignments.booking_id')
+                ->join('stations', 'stations.id = booking_assignments.station_id')
+                ->where('booking_assignments.employee_id', $employeeId)
+                ->where('booking_assignments.status', 'assigned')
+                ->orderBy('booking_assignments.assigned_at', 'ASC')
+                ->limit(5)
+                ->get()->getResultArray();
+
+            // Passing all data to the view
+            $data['assignedCount']   = $assignedCount;
+            $data['inProgressCount'] = $inProgressCount;
+            $data['handedOverToday'] = $handedOverToday;
+            $data['strikeRate']      = $strikeRate;
+            $data['chartLabels']     = json_encode($chartLabels);
+            $data['chartValues']     = json_encode($chartValues);
+            $data['upNextQueue']     = $upNextQueue;
+        }
+
+        return view('employee/dashboard', $data, ['main_layout' => $layout]);
     }
 
 
@@ -133,6 +184,7 @@ class EmployeeDashboard extends BaseController
 
         return view('employee/employeedetail', [
             'title'       => 'Employee Details',
+            'activeMenu'  => 'empdetail',
             'employee'    => $employee,
             'assignments' => $assignments,
         ]);
@@ -140,6 +192,8 @@ class EmployeeDashboard extends BaseController
 
     public function bookings()
     {
+
+
         $employeeId = session()->get('employee_id');
 
         $assignbookings = $this->bookingAssignmentModel
@@ -150,9 +204,15 @@ class EmployeeDashboard extends BaseController
             ->orderBy('booking_assignments.assigned_at', 'DESC')
             ->findAll();
 
+        // Determine layout based on request type
+        $layout = $this->request->isAJAX() ? 'employee/layout/blank' : 'employee/layout/empmain';
+
         return view('employee/bookings', [
             'title'          => 'Bookings',
+            'activeMenu'     => 'bookings',
+            'role'           => session()->get('role'),
             'assignbookings' => $assignbookings,
+            'main_layout'    => $layout,
         ]);
     }
 
@@ -163,11 +223,8 @@ class EmployeeDashboard extends BaseController
         }
 
         $assignId = (int) $this->request->getPost('booking_assign_id');
-        if (!$assignId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Invalid booking ID']);
-        }
-
         $assignment = $this->bookingAssignmentModel->find($assignId);
+
         if (!$assignment) {
             return $this->response->setJSON(['success' => false, 'message' => 'Assignment not found']);
         }
@@ -175,39 +232,36 @@ class EmployeeDashboard extends BaseController
         $startedAt = date('Y-m-d H:i:s');
         $db = \Config\Database::connect();
 
-        // Start Transaction
         $db->transStart();
 
-        // 1) Update THIS SPECIFIC station assignment status to in_progress
+        // 1) Update assignment
         $this->bookingAssignmentModel->update($assignId, [
             'status'     => 'in_progress',
             'started_at' => $startedAt,
             'updated_at' => $startedAt,
         ]);
 
-        // 2) Update main booking status 
-        // We use a WHERE check to ensure we don't cause a collision if it's already in_progress
-        $this->bookingModel->update($assignment['booking_id'], [
-            'status'     => 'in_progress',
-            'updated_at' => $startedAt
-        ]);
+        // 2)
+        $mainBooking = $db->table('bookings')->where('id', $assignment['booking_id'])->get()->getRowArray();
 
-        // 3) Generate Job Steps FOR THIS STATION
+        if ($mainBooking && $mainBooking['status'] !== 'completed' && $mainBooking['status'] !== 'final_inspection') {
+            $this->bookingModel->update($assignment['booking_id'], [
+                'status'     => 'in_progress',
+                'updated_at' => $startedAt
+            ]);
+        }
+
+        // 3) Check if job steps already exist for this booking+station, if not create from template
         $station       = $this->stationModel->find($assignment['station_id']);
         $stationTypeId = (int) ($station['station_type_id'] ?? 0);
 
-        // CRITICAL: Check if steps exist FOR THIS SPECIFIC BOOKING AND THIS SPECIFIC STATION
         $exists = $this->jobStepsModel
             ->where('booking_id', $assignment['booking_id'])
             ->where('station_id', $assignment['station_id'])
             ->countAllResults();
 
         if ($exists === 0 && $stationTypeId > 0) {
-            $templates = $this->typeStepModel
-                ->where('station_type_id', $stationTypeId)
-                ->orderBy('sequence_no', 'ASC')
-                ->findAll();
-
+            $templates = $this->typeStepModel->where('station_type_id', $stationTypeId)->orderBy('sequence_no', 'ASC')->findAll();
             if (!empty($templates)) {
                 $batch = array_map(function ($t) use ($assignment, $startedAt) {
                     return [
@@ -220,28 +274,24 @@ class EmployeeDashboard extends BaseController
                         'updated_at'           => $startedAt,
                     ];
                 }, $templates);
-
                 $this->jobStepsModel->insertBatch($batch);
             }
         }
 
         $db->transComplete();
 
-        // Debugging the actual error
         if ($db->transStatus() === false) {
-            // Log the actual error to your writable/logs folder so you can see the SQL error
-            log_message('error', 'Database Error: ' . json_encode($db->error()));
-
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Database error: ' . $db->error()['message']
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Database error']);
         }
+
+        // Redirect
+        $role = strtolower(trim(session()->get('employee_role') ?? ''));
+        $redirectUrl = ($role === 'supervisor') ? site_url('employee/supervisor') : site_url('employee/services');
 
         return $this->response->setJSON([
             'success'      => true,
-            'message'      => 'Booking approved and bay steps generated.',
-            'redirect_url' => site_url('employee/services')
+            'message'      => 'Booking approved successfully!',
+            'redirect_url' => $redirectUrl
         ]);
     }
 
@@ -270,11 +320,11 @@ class EmployeeDashboard extends BaseController
     {
         $employeeId = session()->get('employee_id');
 
-        // 1. Fetch Active Job
+        // 1. Fetch Active Job (In-progress or just completed)
         $active = $this->bookingAssignmentModel
             ->select("booking_assignments.id AS assignment_id, booking_assignments.status AS assignment_status, booking_assignments.*, 
-                      bookings.vehicle_model, bookings.service, bookings.booking_date, 
-                      stations.name AS station_name, stations.bay_no, stations.station_type_id")
+                  bookings.vehicle_model, bookings.service, bookings.id as b_id, bookings.booking_date, 
+                  stations.name AS station_name, stations.bay_no, stations.station_type_id")
             ->join('bookings', 'bookings.id = booking_assignments.booking_id', 'left')
             ->join('stations', 'stations.id = booking_assignments.station_id', 'left')
             ->where('booking_assignments.employee_id', $employeeId)
@@ -284,9 +334,18 @@ class EmployeeDashboard extends BaseController
 
         $steps = [];
         if ($active) {
-            $templates = $this->typeStepModel->where('station_type_id', $active['station_type_id'])->orderBy('sequence_no', 'ASC')->findAll();
-            $progress  = $this->jobStepsModel->where('booking_id', $active['booking_id'])->where('station_id', $active['station_id'])->findAll();
+            // Fetch step templates and current progress for the active station
+            $templates = $this->typeStepModel
+                ->where('station_type_id', $active['station_type_id'])
+                ->orderBy('sequence_no', 'ASC')
+                ->findAll();
 
+            $progress = $this->jobStepsModel
+                ->where('booking_id', $active['booking_id'])
+                ->where('station_id', $active['station_id'])
+                ->findAll();
+
+            // Map progress by sequence for easier display
             $map = [];
             foreach ($progress as $p) {
                 $map[$p['sequence_no']] = $p;
@@ -303,20 +362,33 @@ class EmployeeDashboard extends BaseController
             }
         }
 
-        // 2. Fetch data for Handover Modal
-        $stations  = $this->stationModel->where('status', 'active')->where('id !=', $active['station_id'] ?? 0)->orderBy('name', 'ASC')->findAll();
-        $employees = $this->employeeModel->select('id, first_name, last_name')->orderBy('first_name', 'ASC')->findAll();
+        // 2. Fetch data for Handover/Next Station Modal
+        // We get all active stations except the current one
+        $currentStationId = $active['station_id'] ?? 0;
+        $stations = $this->stationModel
+            ->where('status', 'active')
+            ->where('id !=', $currentStationId)
+            ->orderBy('name', 'ASC')
+            ->findAll();
 
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON(['success' => true, 'active' => $active, 'steps' => $steps, 'stations' => $stations, 'employees' => $employees]);
-        }
+        // Fetch all employees for assignment
+        $employees = $this->employeeModel
+            ->select('id, first_name, last_name')
+            ->orderBy('first_name', 'ASC')
+            ->findAll();
+
+        // 3. Determine Layout (Crucial for AJAX Navigation)
+        // If it's an AJAX request, we use 'blank' layout to prevent Double Sidebars/Headers
+        $layout = $this->request->isAJAX() ? 'employee/layout/blank' : 'employee/layout/empmain';
 
         return view('employee/services', [
-            'title' => 'Active Workspace',
-            'active' => $active,
-            'steps' => $steps,
-            'stations' => $stations,
-            'employees' => $employees
+            'title'          => 'Active Workspace',
+            'activeMenu'     => 'services',
+            'active'         => $active,
+            'steps'          => $steps,
+            'stations'       => $stations,
+            'employees'      => $employees,
+            'main_layout'    => $layout, // Passing the determined layout to the view
         ]);
     }
 
@@ -360,7 +432,7 @@ class EmployeeDashboard extends BaseController
     public function doneJobStep()
     {
 
-        $id = (int) $this->request->getPost('job_step_id');  // ✅ Correct
+        $id = (int) $this->request->getPost('job_step_id');  // current assignment row id
 
         if (!$id) {
             $json = $this->request->getJSON(true);
@@ -414,7 +486,6 @@ class EmployeeDashboard extends BaseController
     public function loadstations()
 
     {
-
 
         if (!$this->request->isAJAX()) {
             return $this->response->setJSON([
@@ -480,8 +551,6 @@ class EmployeeDashboard extends BaseController
 
     public function assignNext()
     {
-
-
         if (!$this->request->isAJAX()) {
             return $this->response->setJSON([
                 'success' => false,
@@ -493,28 +562,19 @@ class EmployeeDashboard extends BaseController
         $bookingId    = (int) $this->request->getPost('booking_id');
         $stationId    = (int) $this->request->getPost('station_id');    // next station
         $employeeId   = (int) $this->request->getPost('employee_id');   // next employee
-        $notes        = trim((string) $this->request->getPost('note')); // form textarea name="note" (DB column = notes)
+        $notes        = trim((string) $this->request->getPost('note')); // form textarea name="note"
 
         // ✅ note optional, but station/employee required
         if ($assignmentId <= 0 || $bookingId <= 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Invalid assignment'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Invalid assignment']);
         }
 
         if ($stationId <= 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Please select a station'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Please select a station']);
         }
 
         if ($employeeId <= 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Please select an employee'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Please select an employee']);
         }
 
         $db = \Config\Database::connect();
@@ -528,41 +588,28 @@ class EmployeeDashboard extends BaseController
             ->getRowArray();
 
         if (!$current) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Current assignment not found'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Current assignment not found']);
         }
 
-        // Optional safety: current assignment should be in progress
+        // Optional safety: current assignment should be in progress/completed
         if (($current['status'] ?? '') !== 'completed') {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Only completed assignment can hand over to next station'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Only completed assignment can hand over to next station']);
         }
 
         // Prevent assigning same station again
         if ((int)$current['station_id'] === $stationId) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Please select a different station'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Please select a different station']);
         }
 
         // 2) ✅ Check current station job steps all done/skipped
-        // Table from your screenshot: job_station_steps
         $pendingSteps = $db->table('job_station_steps')
             ->where('booking_id', $bookingId)
             ->where('station_id', (int)$current['station_id'])
-            ->whereNotIn('status', ['done', 'skipped', 'Done', 'Skipped']) // case-safe
+            ->whereNotIn('status', ['done', 'skipped', 'Done', 'Skipped'])
             ->countAllResults();
 
         if ($pendingSteps > 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Complete all steps (Done/Skipped) before assigning next station'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Complete all steps (Done/Skipped) before assigning next station']);
         }
 
         // 3) Next station must be active
@@ -573,25 +620,22 @@ class EmployeeDashboard extends BaseController
             ->getRowArray();
 
         if (!$station) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Selected station is not active'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'Selected station is not active']);
         }
 
-        // 4) ✅ Employee must belong to selected station + be active
-        $allowedEmployee = $db->table('employee_station es')
+        // 4) Next employee must be active
+
+        $nextEmployee = $db->table('employee_station es')
+            ->select('e.role')
             ->join('employees e', 'e.id = es.employee_id', 'inner')
             ->where('es.station_id', $stationId)
             ->where('es.employee_id', $employeeId)
             ->where('e.status', 'active')
-            ->countAllResults();
+            ->get()
+            ->getRowArray();
 
-        if ($allowedEmployee <= 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Selected employee is not assigned to this station or is inactive'
-            ]);
+        if (!$nextEmployee) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Selected employee is not assigned to this station or is inactive']);
         }
 
         // 5) Prevent duplicate active/pending assignment for same booking + next station
@@ -602,35 +646,55 @@ class EmployeeDashboard extends BaseController
             ->countAllResults();
 
         if ($alreadyExists > 0) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'This booking is already assigned to the selected station'
-            ]);
+            return $this->response->setJSON(['success' => false, 'message' => 'This booking is already assigned to the selected station']);
         }
 
-        // 6) ✅ Transaction: complete current + create next pending
+        // 6) Begin transaction
         $db->transStart();
 
-        // Current station assignment -> complete
+        // Current station assignment -> handed_over
         $this->bookingAssignmentModel->update($assignmentId, [
-            'status' => 'handed_over',
-            'completed_at' => date('Y-m-d H:i:s'),
-            'updated_at'   => date('Y-m-d H:i:s')
+            'status'       => 'handed_over',
+            'completed_at' => $now,
+            'updated_at'   => $now
         ]);
 
-        // Next station assignment -> pending
+        // Next station assignment -> assigned
         $insertData = [
-            'booking_id'   => $bookingId,
-            'station_id'   => $stationId,
-            'employee_id'  => $employeeId,
-            'status'       => 'assigned',
-            'notes'        => $notes,
-            'assigned_at'  => $now,
-            'updated_at'   => $now,
-
+            'booking_id'  => $bookingId,
+            'station_id'  => $stationId,
+            'employee_id' => $employeeId,
+            'status'      => 'assigned',
+            'notes'       => $notes,
+            'assigned_at' => $now,
+            'updated_at'  => $now,
         ];
-
         $db->table('booking_assignments')->insert($insertData);
+
+        $nextRole = strtolower(trim($nextEmployee['role'] ?? ''));
+
+        if ($nextRole === 'inspector') {
+
+            // DB update for inspector station
+            $db->table('bookings')
+                ->where('id', $bookingId)
+                ->set('status', 'final_inspection')
+                ->set('updated_at', $now)
+                ->update();
+        } elseif ($nextRole === 'supervisor') {
+
+            // DB update for supervisor station
+            $currentEmployeeId = session()->get('employee_id');
+
+            $db->table('bookings')
+                ->where('id', $bookingId)
+                ->set('status', 'completed')
+                ->set('completed_at', $now)
+                ->set('completed_by', $currentEmployeeId)
+                ->set('final_notes', $notes)
+                ->set('updated_at', $now)
+                ->update();
+        }
 
         $db->transComplete();
 

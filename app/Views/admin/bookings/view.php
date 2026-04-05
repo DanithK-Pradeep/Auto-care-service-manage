@@ -27,7 +27,8 @@
 
       <span class="px-3 py-1 rounded-full text-white text-sm
         <?= $booking['status'] === 'pending' ? 'bg-yellow-500' : '' ?>
-        <?= $booking['status'] === 'approved' ? 'bg-blue-500' : '' ?>
+        <?= $booking['status'] === 'approved' ? 'bg-blue-300' : '' ?>
+        <?= $booking['status'] === 'in_progress' ? 'bg-blue-800' : '' ?>
         <?= $booking['status'] === 'completed' ? 'bg-green-600' : '' ?>
         <?= $booking['status'] === 'rejected' ? 'bg-red-600' : '' ?>">
         <?= ucfirst($booking['status']) ?>

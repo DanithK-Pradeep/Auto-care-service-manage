@@ -1,6 +1,6 @@
 <?= $this->extend('employee/layout/empmain'); ?>
 <?= $this->section('content'); ?>
-<?php $this->include('components/ajax_toast') ?>
+
 
 <div class="w-full px-6 py-6">
 

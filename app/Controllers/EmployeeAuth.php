@@ -9,13 +9,20 @@ class EmployeeAuth extends BaseController
 {
     public function login()
     {
+        // Check if the user is already logged in
         if (session()->get('employee_logged_in')) {
-            return redirect()->to(site_url('employee/dashboard'));
+
+            // Check the user's role
+            $sessionRole = strtolower(trim(session()->get('employee_role') ?? ''));
+
+            if ($sessionRole === 'supervisor') {
+                return redirect()->to(site_url('employee/dashboard'));
+            } else {
+                return redirect()->to(site_url('employee/dashboard'));
+            }
         }
 
-        return view('employee/login', [
-            'title' => 'Employee Login'
-        ]);
+        return view('employee/login', ['title' => 'Employee Login']);
     }
 
     public function attemptLogin()
@@ -24,23 +31,21 @@ class EmployeeAuth extends BaseController
         $password = (string)$this->request->getPost('password');
 
         if ($email === '' || $password === '') {
-            session()->setFlashdata('error', 'Email and password are required');
-            return redirect()->to(site_url('employee/login'))->withInput();
+            return redirect()->to(site_url('employee/login'))->with('error', 'Email and password are required')->withInput();
         }
 
         $employeeModel = new EmployeeModel();
         $emp = $employeeModel->where('email', $email)->first();
 
         if (!$emp || empty($emp['password']) || !password_verify($password, $emp['password'])) {
-            session()->setFlashdata('error', 'Invalid email or password');
-            return redirect()->to(site_url('employee/login'))->withInput();
+            return redirect()->to(site_url('employee/login'))->with('error', 'Invalid email or password')->withInput();
         }
 
         if (($emp['status'] ?? 'active') !== 'active') {
-            session()->setFlashdata('warning', 'Your account is inactive');
-            return redirect()->to(site_url('employee/login'))->withInput();
+            return redirect()->to(site_url('employee/login'))->with('warning', 'Your account is inactive')->withInput();
         }
 
+        // Session management
         session()->set([
             'employee_logged_in' => true,
             'employee_id'        => $emp['id'],
@@ -50,19 +55,21 @@ class EmployeeAuth extends BaseController
         ]);
 
         session()->setFlashdata('success', 'Login successful');
-        return redirect()->to(site_url('employee/dashboard'));
+
+        $userRole = strtolower(trim($emp['role'] ?? ''));
+
+        if ($userRole === 'inspector') {
+            return redirect()->to(site_url('employee/inspector'));
+        } elseif ($userRole === 'supervisor') {
+            return redirect()->to(site_url('employee/dashboard'));
+        } else {
+            return redirect()->to(site_url('employee/dashboard'));
+        }
     }
 
     public function logout()
     {
-        session()->remove([
-            'employee_logged_in',
-            'employee_id',
-            'employee_name',
-            'employee_email',
-            'employee_role',
-        ]);
-
+        session()->remove(['employee_logged_in', 'employee_id', 'employee_name', 'employee_email', 'employee_role']);
         session()->setFlashdata('success', 'Logged out successfully');
         return redirect()->to(site_url('employee/login'));
     }

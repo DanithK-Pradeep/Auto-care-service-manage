@@ -15,7 +15,7 @@ class EmployeeAttendance extends BaseController
 
     public function __construct()
     {
-        // Models initialize කර ඇති නිසා සෑම method එකකදීම නැවත create කිරීමට අවශ්‍ය නැත
+        // Load Models
         $this->attendanceModel = new AttendanceModel();
         $this->leaveModel      = new LeaveModel();
         $this->empModel        = new EmployeeModel();
@@ -25,7 +25,7 @@ class EmployeeAttendance extends BaseController
     {
         $employeeId = session()->get('employee_id');
 
-        // සේවකයා ලොග් වී නැත්නම් Login පේජ් එකට යොමු කරන්න
+        // Redirect if not logged in
         if (!$employeeId) {
             return redirect()->to(site_url('login'));
         }
@@ -48,7 +48,7 @@ class EmployeeAttendance extends BaseController
             ->limit(30)
             ->findAll();
 
-        // 3. Leave History (දෙවතාවක් Fetch කිරීම මග හැරියෙමු)
+        // 3. Leave History 
         $leaveHistory = $this->leaveModel
             ->where('employee_id', $employeeId)
             ->orderBy('created_at', 'DESC')
@@ -67,6 +67,7 @@ class EmployeeAttendance extends BaseController
 
         $data = [
             'title'               => 'My Attendance & HR',
+            'activeMenu'          => 'attendance',
             'todayRecord'         => $todayRecord,
             'history'             => $history,
             'leaveHistory'        => $leaveHistory,
@@ -121,10 +122,11 @@ class EmployeeAttendance extends BaseController
     }
 
     public function checkIn()
-    {
+    {   
         if (!$this->request->isAJAX()) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
+            return $this->response->setStatusCode(403)->setJSON(['message' => 'Forbidden']);
         }
+        
 
         $employeeId = session()->get('employee_id');
         $today      = date('Y-m-d');
@@ -169,7 +171,7 @@ class EmployeeAttendance extends BaseController
     public function checkOut()
     {
         if (!$this->request->isAJAX()) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Invalid request']);
+            return $this->response->setStatusCode(403)->setJSON(['message' => 'Forbidden']);
         }
 
         $employeeId = session()->get('employee_id');

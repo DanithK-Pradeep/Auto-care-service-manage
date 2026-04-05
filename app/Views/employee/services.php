@@ -1,4 +1,4 @@
-<?= $this->extend('employee/layout/empmain'); ?>
+<?= $this->extend($main_layout); ?>
 <?= $this->section('content'); ?>
 <?= $this->include('components/ajax_toast') ?>
 
@@ -469,6 +469,7 @@
                 if (data.success) {
 
                     const finishedText = document.getElementById('finishedAtText');
+                    
                     if (finishedText) finishedText.innerText = data.completed_at;
 
 
@@ -481,7 +482,11 @@
 
                     // Disable the Finish button itself
                     const finishBtn = document.getElementById('finishProcessBtn');
-                    finishBtn.disabled = true;
+                    
+                    if (finishBtn) { finishBtn.disabled = true;
+                        finishBtn.innerText = "Loading...";
+                        }
+
 
                     // IMPORTANT: Enable the Assign Next button
                     const assignNextBtn = document.getElementById('assignNextBtn');
