@@ -334,7 +334,8 @@
 
 
 <!-- Assign Next Modal -->
-<div id="openassignNextModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+<?= $this->section('modals'); ?>
+<div id="openassignNextModal" class="fixed inset-0 z-[9999] hidden overflow-y-auto bg-black/60 flex justify-center items-center p-4">
     <div class="bg-white rounded-2xl p-8 max-w-xl w-full shadow-lg">
         <div class="flex items-start justify-between">
             <div>
@@ -388,9 +389,9 @@
         </form>
     </div>
 </div>
-
+<?= $this->endSection(); ?>
 <?php endif; ?>
-</div>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -469,7 +470,7 @@
                 if (data.success) {
 
                     const finishedText = document.getElementById('finishedAtText');
-                    
+
                     if (finishedText) finishedText.innerText = data.completed_at;
 
 
@@ -482,10 +483,11 @@
 
                     // Disable the Finish button itself
                     const finishBtn = document.getElementById('finishProcessBtn');
-                    
-                    if (finishBtn) { finishBtn.disabled = true;
+
+                    if (finishBtn) {
+                        finishBtn.disabled = true;
                         finishBtn.innerText = "Loading...";
-                        }
+                    }
 
 
                     // IMPORTANT: Enable the Assign Next button

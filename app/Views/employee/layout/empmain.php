@@ -71,7 +71,6 @@
 <body class="antialiased">
 
     <div class="min-h-screen bg-cover bg-center bg-fixed" style="background-image: url('<?= base_url('assets/images/bg.png') ?>');">
-
         <div class="min-h-screen bg-white/30 backdrop-blur-md flex flex-col">
 
             <?= $this->include('employee/partials/header') ?>
@@ -88,8 +87,7 @@
 
             <?= $this->include('employee/partials/footer') ?>
         </div>
-    </div>
+    </div> <?= $this->renderSection('modals') ?>
 
 </body>
-
 </html>

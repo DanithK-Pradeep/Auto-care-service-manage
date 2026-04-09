@@ -1,4 +1,4 @@
-# 1. PHP 8.2 සහ Apache පාවිච්චි කරමු
+
 FROM php:8.2-apache
 
 # 2.

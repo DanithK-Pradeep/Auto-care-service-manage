@@ -58,10 +58,9 @@ class EmployeeAuth extends BaseController
 
         $userRole = strtolower(trim($emp['role'] ?? ''));
 
-        if ($userRole === 'inspector') {
-            return redirect()->to(site_url('employee/inspector'));
-        } elseif ($userRole === 'supervisor') {
-            return redirect()->to(site_url('employee/dashboard'));
+        
+        if ($userRole === 'supervisor') {
+            return redirect()->to(site_url('employee/supervisor'));
         } else {
             return redirect()->to(site_url('employee/dashboard'));
         }

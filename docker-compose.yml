@@ -6,9 +6,10 @@ services:
     restart: always
     ports:
       - "8081:80"
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: root_password
+    environment: 
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db
+      - MYSQL_ROOT_PASSWORD=root_password
     networks:
       - autocare-network
   app:
