@@ -20,6 +20,7 @@ use Psr\Log\LoggerInterface;
  */
 abstract class BaseController extends Controller
 {
+    protected $data = [];
     /**
      * Be sure to declare properties for any property fetch you initialized.
      * The creation of dynamic property is deprecated in PHP 8.2.
@@ -38,8 +39,48 @@ abstract class BaseController extends Controller
 
         // Caution: Do not edit this line.
         parent::initController($request, $response, $logger);
+        $this->data['navItems'] = [
+            ['label' => 'Home', 'url' => site_url('/'), 'match' => 'home', 'button' => false],
+            [
 
-        // Preload any models, libraries, etc, here.
-        // $this->session = service('session');
+                'label' => 'Services',
+                'url'   => site_url('services'),
+                'match' => 'services',
+                'button' => false,
+
+                'dropdown' => [
+                    [
+                        'label' => 'Oil Change',
+                        'url'   => site_url('services/oil-change'),
+                    ],
+                    [
+                        'label' => 'Car Wash',
+                        'url'   => site_url('services/car-wash'),
+                    ],
+                    [
+                        'label' => 'Engine Repair',
+                        'url'   => site_url('services/engine-repair'),
+                    ],
+                    [
+                        'label' => 'Brake Service',
+                        'url'   => site_url('services/brake-service'),
+                    ],
+
+                ],
+
+
+            ],
+            ['label' => 'About', 'url' => site_url('about'), 'match' => 'about', 'button' => false],
+            ['label' => 'Contact', 'url' => site_url('contact'), 'match' => 'contact', 'button' => false],
+            ['label' => 'Book Service', 'url' => site_url('#book'), 'match' => 'book', 'button' => true],
+            ['label' => 'Login', 'url' => site_url('employee/login'), 'match' => 'login', 'button' => false],
+            
+        ];
+
+        
+        $this->data['currentUrl'] = current_url();
+    
+
+       
     }
 }

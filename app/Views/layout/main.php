@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* 1. Hero Background - Ken Burns Effect */
         @keyframes heroBg {
             from {
                 transform: scale(1);
@@ -18,13 +19,17 @@
         }
 
         .animate-heroBg {
+            /* ease-in-out නිසා ඉතාමත් සුමටව සිදුවේ */
             animation: heroBg 12s ease-in-out forwards;
+            will-change: transform;
+            /* Performance වැඩි කිරීමට */
         }
 
+        /* 2. Fade Up - පාවෙමින් ඉහළට ඒම */
         @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: translateY(24px);
+                transform: translateY(30px);
             }
 
             to {
@@ -34,21 +39,25 @@
         }
 
         .animate-fadeUp {
-            animation: fadeUp 1s ease forwards;
+            opacity: 0;
+            /* cubic-bezier භාවිතා කළ විට ඉතාමත් smooth deceleration එකක් ලැබේ */
+            animation: fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
-        .delay-700 {
-            animation-delay: 0.7s;
+        /* JavaScript එකෙන් අකුරු type වෙන අතරතුර මේවා පෙනීම වැළැක්වීමට Delay එක වැඩි කරන්න */
+        .delay-2000 {
+            animation-delay: 2s !important;
         }
 
-        .delay-1000 {
-            animation-delay: 1s;
+        .delay-2500 {
+            animation-delay: 2.5s !important;
         }
 
+        /* 3. Car Slide - පැත්තක සිට පැමිණීම */
         @keyframes carSlide {
             from {
                 opacity: 0;
-                transform: translateX(80px);
+                transform: translateX(100px);
             }
 
             to {
@@ -58,13 +67,15 @@
         }
 
         .animate-carSlide {
-            animation: carSlide 1.2s ease forwards;
+            opacity: 0;
+            animation: carSlide 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
+        /* 4. Word Fade - අකුරු සඳහා */
         @keyframes wordFade {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(15px);
             }
 
             to {
@@ -72,7 +83,159 @@
                 transform: translateY(0);
             }
         }
+
+        .animate-wordFade {
+            opacity: 0;
+            animation: wordFade 0.6s ease-out both;
+        }
+
+        /* Utilities - Delays (වැදගත්: !important පාවිච්චි කිරීමෙන් Tailwind ගැටලු මඟහැරේ) */
+        .delay-500 {
+            animation-delay: 0.5s !important;
+        }
+
+        .delay-700 {
+            animation-delay: 0.7s !important;
+        }
+
+        .delay-1000 {
+            animation-delay: 1s !important;
+        }
+
+        /* සිනිඳු ලෙස Scroll වීම සඳහා */
+        html {
+            scroll-behavior: smooth;
+        }
+
+
+        /* 1. Animation එක - translate3d පාවිච්චි කිරීමෙන් GPU එක වැඩ කරයි */
+
+
+
+        /* 1. Animation එක - translate3d පාවිච්චි කිරීමෙන් GPU එක සක්‍රීය වේ */
+        @keyframes infiniteScroll {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+
+            100% {
+                /* මෙහි -50% ට පසුව ඉතා කුඩා අගයක් එක් කිරීමෙන් repetition එක smooth වේ */
+                transform: translate3d(-50%, 0, 0);
+            }
+        }
+
+        .brand-marquee {
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+            height: 120px;
+            /* ලෝගෝ පේළියේ උස */
+            display: flex;
+            align-items: center;
+        }
+
+        .marquee-track {
+            display: flex;
+            align-items: center;
+            width: max-content;
+            animation: infiniteScroll 80s linear infinite;
+
+            /* ගැස්සීම නවත්වා සුමට කිරීමට (Anti-flicker properties) */
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000;
+            -webkit-perspective: 1000;
+            -webkit-backface-visibility: hidden;
+
+            /* පින්තූර එකිනෙක ගැටීම වැළැක්වීමට */
+            transform-style: preserve-3d;
+        }
+
+        .logo-item {
+            width: 200px;
+            /* ලෝගෝ අතර පරතරය ස්ථාවරව තැබීමට */
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            padding: 0 40px;
+        }
+
+        .logo-item img {
+            max-height: 60px;
+            /* ලෝගෝ වල ප්‍රමාණය ස්ථාවර කරන්න */
+            width: auto;
+            object-fit: contain;
+            /* Flickering නැවැත්වීමට අත්‍යවශ්‍යයි */
+            backface-visibility: hidden;
+            will-change: transform;
+
+
+            /* පින්තූරය Blur වීම හෝ flicker වීම වැළැක්වීමට */
+            image-rendering: -webkit-optimize-contrast;
+            backface-visibility: hidden;
+        }
+
+        /* Fade Effect - මෙය z-index එක මඟින් ලෝගෝ උඩින් තබන්න */
+        .brand-marquee::before,
+        .brand-marquee::after {
+            background: linear-gradient(to right, white 0%, rgba(255, 255, 255, 0) 100%);
+            content: "";
+            height: 100%;
+            position: absolute;
+            width: 150px;
+            z-index: 10;
+            pointer-events: none;
+            top: 0;
+        }
+
+        .brand-marquee::after {
+            right: 0;
+            transform: rotateZ(180deg);
+        }
+
+        .brand-marquee::before {
+            left: 0;
+        }
+
+        @keyframes gridMove {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 40px 40px;
+            }
+        }
+
+        .animated-bg-section {
+            position: relative;
+            background-color: #ffffff;
+            /* ප්‍රධාන පසුබිම */
+            overflow: hidden;
+        }
+
+        /* සියුම් Grid එකක් Background එකට එක් කිරීම */
+        .animated-bg-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            /* ඇනිමේෂන් එක කැපෙන්නේ නැතිව පේන්න */
+            height: 100%;
+            /* ඉතා සියුම් අළු පාට grid එකක් */
+            background-image:
+                linear-gradient(to right, rgba(16, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            /* කොටු වල ප්‍රමාණය */
+            animation: gridMove 10s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
     </style>
+
 
 </head>
 
@@ -305,23 +468,6 @@
             dropdown.classList.toggle('hidden');
         }
 
-
-        /* HERO ANIMATION */
-        const text = "Reliable Car Service";
-        const title = document.getElementById("hero-title");
-
-        text.split("  ").forEach((word, index) => {
-            const span = document.createElement("span");
-
-            span.textContent = word + " ";
-            span.style.opacity = 0;
-            span.style.display = "inline-block";
-            span.style.transform = "translateY(20px)";
-            span.style.animation = "wordFade 0.6s ease forwards";
-            span.style.animationDelay = `${index * 0.25}s`;
-
-            title.appendChild(span);
-        });
 
         /* COUNTER ANIMATION */
         const counters = document.querySelectorAll('.counter');

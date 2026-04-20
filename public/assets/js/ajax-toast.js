@@ -96,28 +96,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-/* ---------- 6. Attendance Functions ---------- */
-window.processCheckIn = async () => {
-    const res = await window.ajaxRequest("POST", "/employee/attendance/checkIn");
-    if (res.success) setTimeout(() => location.reload(), 1000);
-};
 
-window.confirmCheckOut = () => {
-    const m = document.getElementById("checkOutModal");
-    if (m) { m.classList.remove("hidden"); m.classList.add("flex"); }
-};
 
-window.processCheckOut = async () => {
-    const res = await window.ajaxRequest("POST", "/employee/attendance/checkOut");
-    if (res.success) setTimeout(() => location.reload(), 1000);
-};
-
-window.processCheckOut = async () => {
-  const res = await window.ajaxRequest("POST", "/employee/attendance/checkOut");
-  if (res.success) setTimeout(() => location.reload(), 1000);
-};
-
-// ---------- 7. HTMX Integration for Active Link Highlighting ----------
+// ---------- 6. HTMX Integration for Active Link Highlighting ----------
 
 document.addEventListener("htmx:afterSettle", function (evt) {
 
@@ -148,5 +129,93 @@ document.addEventListener("htmx:afterSettle", function (evt) {
   });
 });
 
+/* ---------- Global Attendance & Modal System ---------- */
 
+// 1. CSRF Token එක ඕනෑම පේජ් එකකින් හොයාගන්න Helper එක
+window.getCsrfData = () => {
+    const csrfInput = document.querySelector('input[name^="csrf_"]');
+    return {
+        name: csrfInput ? csrfInput.name : 'csrf_test_name',
+        hash: csrfInput ? csrfInput.value : ''
+    };
+};
+
+// 2. Global Check-In Logic
+window.processCheckIn = async () => {
+    const btn = document.querySelector('button[onclick="processCheckIn()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="flex items-center gap-2 justify-center">
+            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Processing...</span>`;
+    }
+
+    const csrf = window.getCsrfData();
+    const formData = new FormData();
+    formData.append(csrf.name, csrf.hash);
+
+    // AJAX Request එක යවනවා
+    const res = await window.ajaxRequest("POST", "/employee/attendance/checkIn", formData);
+    
+    if (res && res.success) {
+        // HTMX එකට කියනවා දැන් පේජ් එකේ කෑල්ලක් Update කරන්න කියලා
+        document.body.dispatchEvent(new Event('attendanceStatusChanged'));
+    } else if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "Check In";
+    }
+};
+
+// 3. Global Check-Out Logic
+window.processCheckOut = async () => {
+    const btn = document.querySelector('button[onclick="processCheckOut()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = "Processing...";
+    }
+
+    const csrf = window.getCsrfData();
+    const formData = new FormData();
+    formData.append(csrf.name, csrf.hash);
+
+    const res = await window.ajaxRequest("POST", "/employee/attendance/checkOut", formData);
+    
+    if (res && res.success) {
+        document.body.dispatchEvent(new Event('attendanceStatusChanged'));
+        // Modal එක වහන්න කලින් පොඩි delay එකක් දෙනවා (Toast එක පේන්න)
+        setTimeout(() => {
+            if (typeof window.closeCheckOutModal === 'function') window.closeCheckOutModal();
+        }, 800);
+    } else if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "Yes, Check Out";
+    }
+};
+
+// 4. Modal UI Controls (දැන් පේජ් දෙකටම මේක පොදුයි)
+window.confirmCheckOut = () => {
+    const m = document.getElementById("checkOutModal");
+    const card = document.getElementById("modalCard");
+    if (m) { 
+        m.classList.replace("hidden", "grid"); 
+        setTimeout(() => {
+            if(card) {
+                card.classList.replace("scale-95", "scale-100");
+                card.classList.replace("opacity-0", "opacity-100");
+            }
+        }, 10);
+    }
+};
+
+window.closeCheckOutModal = () => {
+    const m = document.getElementById("checkOutModal");
+    const card = document.getElementById("modalCard");
+    if(card) {
+        card.classList.replace("scale-100", "scale-95");
+        card.classList.replace("opacity-100", "opacity-0");
+    }
+    setTimeout(() => {
+        if(m) m.classList.replace("grid", "hidden");
+    }, 200);
+};
 

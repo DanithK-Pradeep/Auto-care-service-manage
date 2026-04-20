@@ -11,6 +11,8 @@ $routes->get('/', 'Home::index');
 $routes->get('services/(:segment)', 'Services::detail/$1');
 $routes->get('book-service', 'Booking::index');
 $routes->post('book-service', 'Booking::store');
+$routes->get('about', 'Home::about');
+$routes->get('contact', 'Home::contact');
 
 // --- Admin Authentication ---
 $routes->get('/admin/login', 'AdminAuth::showLogin');
@@ -79,11 +81,10 @@ $routes->group('employee', ['filter' => 'employeeAuth'], function ($routes) {
     // Attendance Management (Moved inside group for security)
     $routes->get('attendance', 'EmployeeAttendance::index');
     $routes->post('attendance/checkIn', 'EmployeeAttendance::checkIn');
-    $routes->get('attendance/checkIn', 'EmployeeAttendance::checkIn'); 
     $routes->post('attendance/checkOut', 'EmployeeAttendance::checkOut');
-    $routes->get('attendance/checkOut', 'EmployeeAttendance::checkOut'); 
     $routes->post('attendance/applyLeave', 'EmployeeAttendance::applyLeave');
-    $routes->get('attendance/getFullHistory', 'EmployeeAttendance::fetchFullHistory');
+    $routes->get('attendance/getFilteredHistory', 'EmployeeAttendance::getFilteredHistory');
+    $routes->get('attendance/getAttendanceBar', 'EmployeeAttendance::getAttendanceBar');
 
     // Spare Parts Management
     $routes->group('spare', function ($routes) {

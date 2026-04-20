@@ -11,6 +11,7 @@ use App\Models\StationModel;
 use App\Models\StationTypeStepModel;
 use App\Models\JobStationModel;
 use App\Models\AttendanceModel;
+use App\Models\SparePartUsageModel;
 
 
 class EmployeeDashboard extends BaseController
@@ -24,6 +25,8 @@ class EmployeeDashboard extends BaseController
     protected $stationModel;
     protected $typeStepModel;
     protected $attendanceModel;
+    protected $spareUsageModel;
+
 
     public function __construct()
     {
@@ -35,6 +38,7 @@ class EmployeeDashboard extends BaseController
         $this->stationModel           = new StationModel();
         $this->typeStepModel          = new StationTypeStepModel();
         $this->attendanceModel        = new AttendanceModel();
+        $this->spareUsageModel        = new SparePartUsageModel();
     }
 
     public function index()
@@ -223,7 +227,7 @@ class EmployeeDashboard extends BaseController
         }
 
         $assignId = (int) $this->request->getPost('booking_assign_id');
-        $assignment = $this->bookingAssignmentModel->find($assignId);
+        $assignment = $this->bookingAssignmentModel->select('id, booking_id, station_id, employee_id')->find($assignId);
 
         if (!$assignment) {
             return $this->response->setJSON(['success' => false, 'message' => 'Assignment not found']);
@@ -286,13 +290,15 @@ class EmployeeDashboard extends BaseController
 
         // Redirect
         $role = strtolower(trim(session()->get('employee_role') ?? ''));
-        $redirectUrl = ($role === 'supervisor') ? site_url('employee/supervisor') : site_url('employee/services');
+        $redirectUrl = ($role === 'supervisor') ? site_url('employee/supervisor/') : site_url('employee/services');
 
-        return $this->response->setJSON([
-            'success'      => true,
-            'message'      => 'Booking approved successfully!',
-            'redirect_url' => $redirectUrl
-        ]);
+        return $this->response
+            ->setHeader('HX-Trigger', 'refreshDashboard') // අපි දෙන නමක් (Custom Trigger)
+            ->setJSON([
+                'success' => true,
+                'message' => 'Process successful!',
+                'redirect' => $redirectUrl
+            ]);
     }
 
     public function getBookingDetails($id)
@@ -301,8 +307,9 @@ class EmployeeDashboard extends BaseController
             return $this->response->setStatusCode(403)->setJSON(['message' => 'Forbidden']);
         }
 
+        // 1. මේ Assignment එකට අදාළ Booking සහ Station විස්තර ගන්නවා
         $booking = $this->bookingAssignmentModel
-            ->select('booking_assignments.*, bookings.name, bookings.phone, bookings.vehicle_model, bookings.service, bookings.booking_date')
+            ->select('booking_assignments.*, bookings.name, bookings.phone, bookings.vehicle_model, bookings.service, bookings.booking_date, bookings.final_notes')
             ->join('bookings', 'bookings.id = booking_assignments.booking_id', 'left')
             ->where('booking_assignments.id', $id)
             ->first();
@@ -311,7 +318,43 @@ class EmployeeDashboard extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Booking not found']);
         }
 
-        return $this->response->setJSON(['success' => true, 'booking' => $booking]);
+        // 2. JS එකට පෙන්වන්න අවශ්‍ය අමතර දත්ත ටික දැන් Models හරහා Fetch කරගමු
+        $assignmentHistory = $this->bookingAssignmentModel
+            ->select('booking_assignments.*, stations.name as station_name, employees.name as employee_name')
+            ->join('stations', 'stations.id = booking_assignments.station_id', 'left')
+            ->join('employees', 'employees.id = booking_assignments.employee_id', 'left')
+            ->where('booking_id', $booking['booking_id'])
+            ->findAll();
+
+        $jobSteps = $this->jobStepsModel
+            ->select('job_steps.*, stations.name as station_name, employees.name as employee_name')
+            ->join('stations', 'stations.id = job_steps.station_id', 'left')
+            ->join('employees', 'employees.id = job_steps.assigned_employee_id', 'left')
+            ->where('booking_id', $booking['booking_id'])
+            ->findAll();
+
+        $spareUsage = $this->spareUsageModel
+            ->select('spare_usage.*, spare_parts.part_name, stations.name as station_name')
+            ->join('spare_parts', 'spare_parts.id = spare_usage.spare_part_id', 'left')
+            ->join('stations', 'stations.id = spare_usage.station_id', 'left')
+            ->where('booking_id', $booking['booking_id'])
+            ->findAll();
+
+        // 3. දැන් මේ සියල්ලම JSON එකක් විදියට JS එකට යවනවා
+        return $this->response->setJSON([
+            'success'           => true,
+            'booking'           => $booking,
+            'serviceSummary'    => [
+                'status'           => $booking['status'],
+                'current_station'  => $booking['station_name'] ?? '-',
+                'bay_no'           => $booking['bay_no'] ?? '1',
+                'current_employee' => session()->get('name'),
+                'started_at'       => $booking['started_at'] ?? '-'
+            ],
+            'assignmentHistory' => $assignmentHistory,
+            'jobSteps'          => $jobSteps,
+            'spareUsage'        => $spareUsage
+        ]);
     }
 
 
@@ -656,7 +699,8 @@ class EmployeeDashboard extends BaseController
         $this->bookingAssignmentModel->update($assignmentId, [
             'status'       => 'handed_over',
             'completed_at' => $now,
-            'updated_at'   => $now
+            'updated_at'   => $now,
+            'notes'       => $notes
         ]);
 
         // Next station assignment -> assigned
@@ -665,7 +709,6 @@ class EmployeeDashboard extends BaseController
             'station_id'  => $stationId,
             'employee_id' => $employeeId,
             'status'      => 'assigned',
-            'notes'       => $notes,
             'assigned_at' => $now,
             'updated_at'  => $now,
         ];

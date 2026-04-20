@@ -24,7 +24,7 @@
                 <?php if (empty($readyBookings)): ?>
                     <tr>
                         <td colspan="6" class="p-8 text-center text-gray-500 font-medium">
-                           No vehicles waiting for release.
+                            No vehicles waiting for release.
                         </td>
                     </tr>
                 <?php else: ?>
@@ -35,27 +35,46 @@
                             <td class="p-4 text-gray-600"><?= esc($b['service'] ?? 'N/A') ?></td>
                             <td class="p-4 font-bold text-red-600">Rs. <?= number_format($b['total_spare_parts_cost'], 2) ?></td>
                             <td class="p-4 text-center">
-                                <span class="px-4 py-2 text-sm font-bold text-white bg-green-600 rounded-full">
-                                    <?= esc($b['status'] ?? 'N/A') ?>
+                                <?php
+                                $status = strtolower($b['status'] ?? 'N/A');
+
+                                // කලින් තීම් එකටම ගැලපෙන පාටවල් ටික
+                                $statusClass = match ($status) {
+                                    'completed'        => 'bg-green-50 text-green-700 border-green-200',
+                                    'final_inspection' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                    'pending'          => 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                                    default            => 'bg-gray-50 text-gray-700 border-gray-200',
+                                };
+                                ?>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm <?= $statusClass ?>">
+                                    <?= str_replace('_', ' ', $status) ?>
                                 </span>
                             </td>
-                            <td class="p-4 flex justify-center gap-2">
-                                <button onclick="openBillingModal(<?= $b['id'] ?>, <?= $b['total_spare_parts_cost'] ?>)" 
-                                    class="px-4 py-2 bg-green-600 text-sm text-white font-bold rounded-lg hover:bg-green-700 shadow-md transition transform hover:scale-105">
-                                    Bill & Release
-                                </button>
+
+                            <td class="p-4">
+                                <div class="flex items-center justify-center gap-2 whitespace-nowrap">
+                                    <button type="button"
+                                        onclick="openBillingModal(<?= (int)$b['id'] ?>, <?= (float)$b['total_spare_parts_cost'] ?>)"
+                                        class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-[11px] font-bold text-white rounded-lg shadow-md transition-all transform active:scale-95 flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Bill & Release
+                                    </button>
+                                </div>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
 
+<?= $this->section('modals'); ?>
 <div id="billingModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-[100] p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-95 duration-300" id="billingCard">
-        
+
         <div class="px-6 py-4 bg-green-50 border-b border-green-200 flex justify-between items-center">
             <h2 class="text-xl font-bold text-green-800">Final Invoice & Handover</h2>
             <button onclick="closeBillingModal()" class="text-green-600 hover:text-green-800 text-2xl font-bold">&times;</button>
@@ -64,10 +83,10 @@
         <div class="p-6 space-y-4">
             <input type="hidden" id="billBookingId">
             <input type="hidden" id="billSparePartsCost">
-            
+
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Service Charge (Rs.)</label>
-                <input type="number" id="serviceCharge" value="0" min="0" oninput="calculateTotal()" 
+                <input type="number" id="serviceCharge" value="0" min="0" oninput="calculateTotal()"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-lg font-bold text-gray-800">
             </div>
 
@@ -78,7 +97,7 @@
 
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Discount (Rs.) <span class="text-gray-400 font-normal">- Optional</span></label>
-                <input type="number" id="discount" value="0" min="0" oninput="calculateTotal()" 
+                <input type="number" id="discount" value="0" min="0" oninput="calculateTotal()"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
             </div>
 
@@ -107,30 +126,38 @@
         </div>
     </div>
 </div>
-
+<?= $this->endSection() ?>
 <script>
     function openBillingModal(id, spareCost) {
         document.getElementById('billBookingId').value = id;
         document.getElementById('billSparePartsCost').value = spareCost;
         document.getElementById('displaySpareCost').innerText = 'Rs. ' + parseFloat(spareCost).toFixed(2);
-        
+
         // Reset values
         document.getElementById('serviceCharge').value = '';
         document.getElementById('discount').value = '0';
-        
+
         calculateTotal();
 
         const modal = document.getElementById('billingModal');
         const card = document.getElementById('billingCard');
-        modal.classList.remove('hidden'); modal.classList.add('flex');
-        setTimeout(() => { card.classList.remove('scale-95'); card.classList.add('scale-100'); }, 10);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => {
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        }, 10);
     }
 
     function closeBillingModal() {
         const modal = document.getElementById('billingModal');
         const card = document.getElementById('billingCard');
-        card.classList.remove('scale-100'); card.classList.add('scale-95');
-        setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 200);
     }
 
     function calculateTotal() {
@@ -139,14 +166,15 @@
         let discount = parseFloat(document.getElementById('discount').value) || 0;
 
         let net = (service + parts) - discount;
-        if(net < 0) net = 0; 
+        if (net < 0) net = 0;
 
         document.getElementById('displayNetTotal').innerText = 'Rs. ' + net.toFixed(2);
     }
 
     function submitRelease() {
         const btn = document.getElementById('btnRelease');
-        btn.disabled = true; btn.innerText = "Processing...";
+        btn.disabled = true;
+        btn.innerText = "Processing...";
 
         const formData = new FormData();
         formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
@@ -158,19 +186,28 @@
         formData.append('payment_method', document.getElementById('paymentMethod').value);
 
         fetch('<?= site_url('employee/supervisor/release') ?>', {
-            method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            closeBillingModal();
-            window.showToast(data.message, data.success ? 'success' : 'error');
-            if(data.success) setTimeout(() => location.reload(), 1500);
-            else { btn.disabled = false; btn.innerText = "Confirm & Release"; }
-        })
-        .catch(error => {
-            window.showToast("Network Error", "error");
-            btn.disabled = false; btn.innerText = "Confirm & Release";
-        });
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                closeBillingModal();
+                window.showToast(data.message, data.success ? 'success' : 'error');
+                if (data.success) setTimeout(() => location.reload(), 1500);
+                else {
+                    btn.disabled = false;
+                    btn.innerText = "Confirm & Release";
+                }
+            })
+            .catch(error => {
+                window.showToast("Network Error", "error");
+                btn.disabled = false;
+                btn.innerText = "Confirm & Release";
+            });
     }
 </script>
 

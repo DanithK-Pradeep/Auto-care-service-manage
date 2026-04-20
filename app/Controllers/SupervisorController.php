@@ -101,7 +101,7 @@ class SupervisorController extends BaseController
             ->where('employee_id', $employeeId)
             ->where('status', 'in_progress')
             ->update([
-                'status'       => 'completed', // Assignment එක close කරනවා
+                'status'       => 'released', // Assignment එක close කරනවා
                 'completed_at' => $now,
                 'updated_at'   => $now
             ]);

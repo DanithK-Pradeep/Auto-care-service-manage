@@ -172,7 +172,7 @@ class AdminBookings extends BaseController
         // 8a) Update booking status
         $bookingModel->update($bookingId, [
             'status' => 'approved',
-            'notes'  => $notes, // optional if you store notes in booking
+            'admin_note'  => $notes, 
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
@@ -182,7 +182,7 @@ class AdminBookings extends BaseController
             'employee_id' => $employeeId,
             'station_id'  => $stationId,
             'status'      => 'assigned',
-            'notes'       => $notes,
+            
 
 
 

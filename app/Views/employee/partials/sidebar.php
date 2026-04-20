@@ -1,6 +1,12 @@
-<aside class="w-64 min-h-screen bg-white/10 backdrop-blur-xl border-r border-white/10 text-white shadow-2xl transition-all duration-300">
-    <?php $role = strtolower(trim(session()->get('employee_role') ?? '')); ?>
 
+<?php
+// Determine role for conditional content
+$role = strtolower(trim(session()->get('employee_role') ?? ''));
+?>
+
+
+
+<aside class="w-64 h-full flex-shrink-0 bg-white/10 backdrop-blur-xl border-r border-white/10 text-white shadow-2xl transition-all duration-300 overflow-y-auto">
     <nav class="p-4 space-y-2"
         hx-target="#main-content"
         hx-select="#main-content"

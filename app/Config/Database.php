@@ -26,9 +26,9 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => 'localhost',             
+        'hostname'     => 'localhost',
         'username'     => 'root',
-        'password'     => '',  
+        'password'     => '',
         'database'     => 'autocare',
         'DBDriver'     => 'MySQLi',
         'DBPrefix'     => '',
@@ -37,7 +37,7 @@ class Database extends Config
         'charset'      => 'utf8mb4',
         'DBCollat'     => 'utf8mb4_general_ci',
         'swapPre'      => '',
-        'encrypt'      => false,
+        
         'compress'     => false,
         'strictOn'     => false,
         'failover'     => [],

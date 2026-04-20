@@ -6,11 +6,12 @@ class Home extends BaseController
 {
     public function index()
     {
-        $services = [
+        $this->data['services'] = [
             [
                 'title' => 'Oil Change',
                 'slug' => 'oil-change',
                 'desc'  => 'Keep your engine smooth and long-lasting with regular oil changes.',
+                'long_description' => 'Our premium oil change service includes:<br>• Full synthetic or semi-synthetic oil replacement.<br>• High-quality oil filter change.<br>• Engine fluid levels check.<br>• Visual inspection of belts and hoses to prevent future breakdowns.',
                 'image' => 'https://images.pexels.com/photos/13065690/pexels-photo-13065690.jpeg',
                 'link'  => '/services/oil-change'
             ],
@@ -18,6 +19,7 @@ class Home extends BaseController
                 'title' => 'Car Wash',
                 'slug' => 'car-wash',
                 'desc'  => 'Professional exterior and interior cleaning for a fresh look.',
+                'long_description' => 'Give your vehicle a brand-new shine with our detailed wash:<br>• High-pressure exterior foam wash.<br>• Complete interior vacuum cleaning and dashboard polishing.<br>• Under-carriage cleaning to remove mud and salt.<br>• Tire dressing and window glass cleaning.',
                 'image' => 'https://washhounds.com/wp-content/uploads/35413014_m_normal_none.webp',
                 'link'  => '/services/car-wash'
             ],
@@ -25,13 +27,15 @@ class Home extends BaseController
                 'title' => 'Engine Repair',
                 'slug' => 'engine-repair',
                 'desc'  => 'Expert engine diagnostics and repairs using modern tools.',
-                'image' => 'https://ultimatemechanics.co.nz/wp-content/uploads/2025/07/European-Car-Service-Auckland.jpg',
+                'long_description' => 'We handle everything from minor fixes to major overhauls:<br>• Advanced computer-aided engine diagnostics.<br>• Troubleshooting "Check Engine" lights.<br>• Repairing oil leaks and coolant system issues.<br>• Improving engine performance and fuel efficiency.',
+                'image' => 'https://www.shutterstock.com/image-photo/mechanic-repairing-car-engine-using-600nw-2622052919.jpg',
                 'link'  => '/services/engine-repair'
             ],
             [
                 'title' => 'Tire Change',
                 'slug' => 'tire-change',
                 'desc'  => 'Tire replacement and balancing for a smooth, safe ride.',
+                'long_description' => 'Ensure a safe journey with professional tire care:<br>• Replacement of worn-out tires with top-tier brands.<br>• Precision wheel balancing and pressure check.<br>• Inspection for punctures or sidewall damage.<br>• Proper torque application for all wheel bolts.',
                 'image' => 'https://img.freepik.com/free-photo/car-mechanic-changing-wheels-car_1303-26653.jpg?t=st=1768407062~exp=1768410662~hmac=dde3be2280bdc0fee42cd73f9f3cec7abfbabde9eddaf40acf5b8b85c2257554',
                 'link'  => '/services/tire-change'
             ],
@@ -39,6 +43,7 @@ class Home extends BaseController
                 'title' => 'Battery Check',
                 'slug' => 'battery-check',
                 'desc'  => 'Ensure reliable starts with complete battery testing.',
+                'long_description' => 'Avoid unexpected car failures with our battery service:<br>• Professional voltage and load testing.<br>• Cleaning battery terminals to prevent corrosion.<br>• Alternator performance check.<br>• Expert battery replacement if required.',
                 'image' => 'https://www.shutterstock.com/shutterstock/photos/2388561023/display_1500/stock-photo-close-up-auto-mechanic-hands-with-working-gloves-checking-vehicle-battery-by-battery-tester-in-auto-2388561023.jpg',
                 'link'  => '/services/battery-check'
             ],
@@ -46,12 +51,13 @@ class Home extends BaseController
                 'title' => 'Brake Service',
                 'slug' => 'brake-service',
                 'desc'  => 'Stay safe with professional brake inspection and service.',
+                'long_description' => 'Safety is our top priority. Our brake service covers:<br>• Brake pad and shoe replacement.<br>• Rotor/drum resurfacing or replacement.<br>• Brake fluid flush and refill.<br>• Full inspection of the hydraulic braking system.',
                 'image' => 'https://media.istockphoto.com/id/1193247902/photo/handsome-mechanic-in-uniform.jpg?s=2048x2048&w=is&k=20&c=pd3c6d7MxEbNJD-fMJ6hAXDKdP_QqLhgFOO48uZhqOI=',
                 'link'  => '/services/brake-service'
             ],
         ];
 
-        $whyChooseUs = [
+        $this->data['whyChooseUs'] = [
             [
                 'icon' => '🛠️',
                 'title' => 'Expert Technicians',
@@ -74,7 +80,7 @@ class Home extends BaseController
             ],
         ];
 
-        $counters = [
+        $this->data['counters'] = [
             [
                 'value' => 10,
                 'label' => 'Years Experience',
@@ -96,74 +102,11 @@ class Home extends BaseController
                 'suffix' => '/7',
             ],
         ];
-        $navItems = [
-            [
-                'label' => 'Home',
-                'url'   => site_url('/'),
-                'match' => '',
-                'button' => false,
-            ],
-            [
-
-                'label' => 'Services',
-                'url'   => site_url('services'),
-                'match' => 'services',
-                'button' => false,
-
-                'dropdown' => [
-                    [
-                        'label' => 'Oil Change',
-                        'url'   => site_url('services/oil-change'),
-                    ],
-                    [
-                        'label' => 'Car Wash',
-                        'url'   => site_url('services/car-wash'),
-                    ],
-                    [
-                        'label' => 'Engine Repair',
-                        'url'   => site_url('services/engine-repair'),
-                    ],
-                    [
-                        'label' => 'Brake Service',
-                        'url'   => site_url('services/brake-service'),
-                    ],
-
-                ],
-
-
-            ],
-            [
-                'label' => 'About',
-                'url'   => '#about',
-                'match' => 'about',
-                'button' => false,
-            ],
-            [
-                'label' => 'Contact',
-                'url'   => '#contact',
-                'match' => 'contact',
-                'button' => false,
-            ],
-            [
-                'label' => 'Book Service',
-                'url'   => '#book',
-                'match' => 'book',
-                'button' => true,
-            ],
-            [
-                'label' => '',
-                'url'   => site_url('/employee/login'),
-                'match'   => 'login',
-                'button' => false,
-            ],
-
         
 
-        ];
 
 
-
-        $servicesList = [
+        $this->data['servicesList'] = [
             'none' => 'Select a Service',
             'oil-change' => 'Oil Change',
             'car-wash' => 'Car Wash',
@@ -200,8 +143,28 @@ class Home extends BaseController
 
 
 
-        $currentUrl = current_url();
+        return view('index', $this->data);
+    }
 
-        return view('index', ['services' => $services, 'whyChooseUs' => $whyChooseUs, 'counters' => $counters, 'navItems' => $navItems, 'currentUrl' => $currentUrl, 'servicesList' => $servicesList]);
+    // App/Controllers/Home.php ඇතුළත
+
+    public function about()
+    {
+        // About පේජ් එකට පමණක් අදාළ දත්ත
+        $this->data['team'] = [
+            ['name' => 'Asanka Perera', 'role' => 'Master Mechanic', 'img' => 'https://i.pravatar.cc/300?img=11'],
+            ['name' => 'Dilshan Silva', 'role' => 'Engine Specialist', 'img' => 'https://i.pravatar.cc/300?img=12'],
+            ['name' => 'Kamal Gunaratne', 'role' => 'Service Manager', 'img' => 'https://i.pravatar.cc/300?img=13'],
+        ];
+
+        return view('about', $this->data);
+    }
+
+    // App/Controllers/Home.php
+
+    public function contact()
+    {
+        // අමතර දත්ත අවශ්‍ය නැත, BaseController එකෙන් navItems ලැබෙනු ඇත
+        return view('contact', $this->data);
     }
 }

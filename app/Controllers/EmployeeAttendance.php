@@ -122,11 +122,11 @@ class EmployeeAttendance extends BaseController
     }
 
     public function checkIn()
-    {   
+    {
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(403)->setJSON(['message' => 'Forbidden']);
         }
-        
+
 
         $employeeId = session()->get('employee_id');
         $today      = date('Y-m-d');
@@ -153,11 +153,13 @@ class EmployeeAttendance extends BaseController
         ];
 
         if ($this->attendanceModel->insert($data)) {
-            return $this->response->setJSON([
-                'success' => true,
-                'status'  => 'success',
-                'message' => 'Check-in successful! Have a productive day.'
-            ]);
+            return $this->response
+                
+                ->setJSON([
+                    'success' => true,
+                    'status'  => 'success',
+                    'message' => 'Check-in successful!'
+                ]);
         }
 
         return $this->response->setJSON([
@@ -194,11 +196,12 @@ class EmployeeAttendance extends BaseController
             ];
 
             if ($this->attendanceModel->update($record['id'], $updateData)) {
-                return $this->response->setJSON([
-                    'success' => true,
-                    'status'  => 'success',
-                    'message' => 'Shift ended! You worked ' . $hoursWorked . ' hours today.'
-                ]);
+                return $this->response
+                    ->setJSON([
+                        'success' => true,
+                        'status'  => 'success',
+                        'message' => 'Shift ended! Hours: ' . $hoursWorked . ' you worked today.'
+                    ]);
             }
 
             return $this->response->setJSON([
@@ -207,5 +210,35 @@ class EmployeeAttendance extends BaseController
                 'message' => 'Unable to process check-out.'
             ]);
         }
+
+        if ($record && !empty($record['check_out'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'status'  => 'info',
+                'message' => 'You have already checked out today at ' . date('h:i A', strtotime($record['check_out']))
+            ]);
+        }
+
+        return $this->response->setStatusCode(404)->setJSON([
+            'success' => false,
+            'status'  => 'error',
+            'message' => 'No active check-in record found for today.'
+        ]);
+    }
+
+    public function getAttendanceBar()
+    {
+        $employeeId = session()->get('employee_id');
+        $today = date('Y-m-d');
+
+        $data['todayRecord'] = $this->attendanceModel
+            ->where('employee_id', $employeeId)
+            ->where('work_date', $today)
+            ->first();
+
+        $data['role'] = strtolower(trim(session()->get('employee_role') ?? ''));
+
+        
+        return view('employee/partials/_attendance_bar', $data);
     }
 }

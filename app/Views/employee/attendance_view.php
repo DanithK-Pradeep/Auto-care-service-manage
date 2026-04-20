@@ -124,14 +124,26 @@
 
                 <form action="<?= site_url('employee/attendance/applyLeave') ?>" method="POST">
                     <?= csrf_field() ?>
-                    <div class="mb-4">
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                        <input type="date" name="leave_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Leave Type</label>
-                        <select name="leave_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label for="leaveDatePicker" class="block text-sm font-bold text-gray-700 mb-1">Date</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+
+                            <input type="text" id="leaveDatePicker" name="leave_date" required
+                                placeholder="Select your leave date"
+                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer">
+                        </div>
+                    </div>
+
+
+                    <div class="mb-4">
+                        <label for="leave_type" class="block text-sm font-bold text-gray-700 mb-1">Leave Type</label>
+                        <select id="leave_type" name="leave_type" required class="w-full px-3 py-2 border ...">
                             <option value="sick">Sick Leave</option>
                             <option value="casual">Casual Leave</option>
                             <option value="annual">Annual Leave</option>
@@ -139,8 +151,8 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Reason</label>
-                        <textarea name="reason" rows="2" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Briefly explain..."></textarea>
+                        <label for="reason" class="block text-sm font-bold text-gray-700 mb-1">Reason</label>
+                        <textarea id="reason" name="reason" rows="2" required class="w-full px-3 py-2 border ..." placeholder="Briefly explain..."></textarea>
                     </div>
 
                     <button type="submit" class="w-full py-2 px-4 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 transition-colors">
@@ -190,8 +202,8 @@
         </div>
     </div>
 </div>
-
-<div id="filterModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-50 p-4">
+<?= $this->section('modals'); ?>
+<div id="filterModal" class="fixed inset-0 z-[9999] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col">
 
         <div class="px-6 py-4 flex justify-between items-center">
@@ -213,15 +225,17 @@
                 <button onclick="switchTab('leaves')" id="tab-leaves" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-200 transition-all">Leave Details</button>
             </div>
 
-            <div class="flex items-center gap-3">
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </span>
-                    <input type="text" id="dateRangePicker" class="pl-10 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none w-72 shadow-sm" placeholder="Select Date Range (e.g. Mon to Fri)">
+            <div class="relative w-72">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
                 </div>
+
+                <label for="dateRangePicker" class="sr-only">Select date range</label>
+                <input type="text" id="dateRangePicker" name="date_range"
+                    class="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none shadow-sm"
+                    placeholder="Select Date Range">
             </div>
         </div>
 
@@ -240,7 +254,7 @@
     </div>
 </div>
 
-<div id="checkOutModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden items-center justify-center z-[100] p-4 transition-opacity duration-300">
+<div id="checkOutModal" class="fixed inset-0 z-[9999] hidden bg-black/60 backdrop-blur-sm grid place-items-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-95 duration-300" id="modalCard">
 
         <div class="p-8 text-center">
@@ -263,7 +277,7 @@
         </div>
     </div>
 </div>
-
+<?= $this->endSection(); ?>
 <script>
     // 1. Live Clock Update
     setInterval(() => {
@@ -283,12 +297,16 @@
         }
     }, 1000);
 
-    // 2. Global Variables for History Modal
-    let currentTab = 'attendance';
-    let historyData = {
-        attendance: [],
-        leaves: []
-    };
+
+    // 2. Reload on Attendance Status Change
+    document.body.addEventListener('attendanceStatusChanged', function() {
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    });
+
+
 
     // 3. Initialize Flatpickr (Date Range Picker)
     flatpickr("#dateRangePicker", {
@@ -300,6 +318,11 @@
                 fetchFilteredData(selectedDates[0], selectedDates[1]);
             }
         }
+    });
+
+    flatpickr("#leaveDatePicker", {
+        dateFormat: "Y-m-d",
+        minDate: new Date().fp_incr(1),
     });
 
     // 4. Fetch History Data (AJAX GET Request)
@@ -334,7 +357,7 @@
         const container = document.getElementById('modalBody');
         let html = '';
 
-        if (currentTab === 'attendance') {
+        if (window.currentTab === 'attendance') {
             if (historyData.attendance.length === 0) {
                 html = '<div class="text-center py-20 text-gray-500">No work records found.</div>';
             } else {
@@ -390,7 +413,7 @@
 
     // 6. Tab Switching Logic
     function switchTab(tab) {
-        currentTab = tab;
+        window.currentTab = tab;
         const attTab = document.getElementById('tab-attendance');
         const leaTab = document.getElementById('tab-leaves');
 
@@ -412,122 +435,65 @@
         };
     }
 
-    // 8. Process Check-In (AJAX POST Request)
-    function processCheckIn() {
-        const csrf = getCsrfData();
-        const formData = new FormData();
-        formData.append(csrf.tokenName, csrf.tokenHash);
-
-        // Prevent double clicking
-        const btn = document.querySelector('button[onclick="processCheckIn()"]');
-        if (btn) btn.disabled = true;
-
-        fetch('<?= site_url('employee/attendance/checkIn') ?>', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                // CORRECT AJAX TOAST CALL: window.showToast(Message, Type);
-                window.showToast(data.message, data.status || (data.success ? 'success' : 'error'));
-
-                if (data.success || data.status === 'success' || data.status === 'info') {
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    if (btn) btn.disabled = false;
-                }
-            })
-            .catch(err => {
-                console.error("AJAX Error:", err);
-                window.showToast('Failed to connect to server', 'error');
-                if (btn) btn.disabled = false;
-            });
-    }
-
-    // 9. Process Check-Out (AJAX POST Request)
-    function processCheckOut() {
-        const csrf = getCsrfData();
-        const formData = new FormData();
-        formData.append(csrf.tokenName, csrf.tokenHash);
-
-        const btn = document.querySelector('button[onclick="processCheckOut()"]');
-        if (btn) btn.disabled = true;
-
-        fetch('<?= site_url('employee/attendance/checkOut') ?>', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                closeCheckOutModal();
-
-                // CORRECT AJAX TOAST CALL: window.showToast(Message, Type);
-                window.showToast(data.message, data.status || (data.success ? 'success' : 'error'));
-
-                if (data.success || data.status === 'success') {
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    if (btn) btn.disabled = false;
-                }
-            })
-            .catch(err => {
-                closeCheckOutModal();
-                console.error("AJAX Error:", err);
-                window.showToast('Failed to connect to server', 'error');
-                if (btn) btn.disabled = false;
-            });
-    }
 
     // 10. Modal Control Functions
     function openFilterModal() {
-        document.getElementById('filterModal').classList.remove('hidden');
-        document.getElementById('filterModal').classList.add('flex');
+        const modal = document.getElementById('filterModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('grid');
+
+        flatpickr("#dateRangePicker", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            static: true,
+            onClose: function(selectedDates) {
+                if (selectedDates.length === 2) {
+                    fetchFilteredData(selectedDates[0], selectedDates[1]);
+                }
+            }
+        });
     }
 
     function closeFilterModal() {
-        document.getElementById('filterModal').classList.add('hidden');
-        document.getElementById('filterModal').classList.remove('flex');
+        const modal = document.getElementById('filterModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('grid');
+
+
+        const pickerInput = document.getElementById('dateRangePicker');
+        if (pickerInput._flatpickr) {
+            pickerInput._flatpickr.clear();
+        }
+
+
+        const container = document.getElementById('modalBody');
+        container.innerHTML = `
+        <div id="emptyState" class="flex flex-col items-center justify-center py-20 text-gray-400">
+            <svg class="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <p class="italic">Please select a date range to load your data...</p>
+        </div>`;
+
+
+        window.currentTab = window.currentTab || 'attendance';
+        window.historyData = window.historyData || {
+            attendance: [],
+            leaves: []
+        };
+
+        switchTab('attendance');
     }
 
-    function confirmCheckOut() {
-        const modal = document.getElementById('checkOutModal');
-        const card = document.getElementById('modalCard');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        setTimeout(() => {
-            card.classList.remove('scale-95');
-            card.classList.add('scale-100');
-        }, 10);
-    }
-
-    function closeCheckOutModal() {
-        const modal = document.getElementById('checkOutModal');
-        const card = document.getElementById('modalCard');
-        card.classList.remove('scale-100');
-        card.classList.add('scale-95');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 200);
-    }
 
     // 11. Close Modals on Backdrop Click
     window.onclick = function(event) {
         const checkOutModal = document.getElementById('checkOutModal');
         const filterModal = document.getElementById('filterModal');
-        if (event.target == checkOutModal) closeCheckOutModal();
+        if (event.target == checkOutModal && typeof window.closeCheckOutModal === 'function') {
+            window.closeCheckOutModal();
+        }
         if (event.target == filterModal) closeFilterModal();
     }
 </script>

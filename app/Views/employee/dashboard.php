@@ -10,43 +10,42 @@ $role = strtolower(trim(session()->get('employee_role') ?? ''));
     <h1 class="text-2xl mb-4 text-gray-800 font-bold tracking-wide"><?= esc($title ?? 'My Dashboard') ?></h1>
     <div class="mb-4 h-1 bg-red-600"></div>
 
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 flex justify-between items-center">
-        <div>
-            <h3 class="text-lg font-bold text-gray-800">Attendance (<?= esc(ucfirst($role)) ?>)</h3>
-            <p class="text-sm text-gray-500">
-                <?php if (!$todayRecord): ?>
-                    Ready to start?
-                <?php elseif (empty($todayRecord['check_out'])): ?>
-                    In: <?= date('h:i A', strtotime($todayRecord['check_in'])) ?>
-                <?php else: ?>
-                    Worked: <?= $todayRecord['worked_hours'] ?> hrs
-                <?php endif; ?>
-            </p>
-        </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 overflow-hidden">
+        <div id="attendance-refresh-target"
+            hx-get="<?= site_url('employee/attendance/getAttendanceBar') ?>"
+            hx-trigger="attendanceStatusChanged from:body"
+            hx-swap="innerHTML">
 
-        <div>
-            <?php if (!$todayRecord): ?>
-                <button type="button" onclick="processCheckIn()" class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Check In</button>
-            <?php elseif (empty($todayRecord['check_out'])): ?>
-                <button type="button" onclick="confirmCheckOut()" class="px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700">Check Out</button>
-            <?php endif; ?>
+            <?= view('employee/partials/_attendance_bar') ?>
         </div>
     </div>
 </div>
+<?= $this->section('modals'); ?>
+<div id="checkOutModal" class="fixed inset-0 z-[9999] hidden bg-black/60 backdrop-blur-sm grid place-items-center p-4">
 
-<div id="checkOutModal" class="fixed inset-0 bg-gray-900/60 hidden items-center justify-center z-[100] p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+    <div id="modalCard" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-95 opacity-0 duration-300">
+
         <div class="p-8 text-center">
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Ending Shift?</h3>
-            <p class="text-sm text-gray-500">Are you sure you want to clock out now?</p>
+            <div class="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-black text-gray-900 mb-2">Ending Shift?</h3>
+            <p class="text-sm text-gray-500">Are you sure you want to clock out now? Your working hours will be finalized.</p>
         </div>
+
         <div class="grid grid-cols-2 border-t border-gray-100">
-            <button onclick="document.getElementById('checkOutModal').classList.replace('flex','hidden')" class="py-4 text-gray-400 font-bold uppercase tracking-widest text-xs">Cancel</button>
-            <button onclick="processCheckOut()" class="py-4 text-red-600 font-black uppercase tracking-widest text-xs border-l border-gray-100">Yes, Check Out</button>
+            <button onclick="closeCheckOutModal()" class="py-4 text-sm font-bold text-gray-400 hover:bg-gray-50 border-r border-gray-100 transition-colors uppercase tracking-widest">
+                Cancel
+            </button>
+            <button onclick="processCheckOut()" class="py-4 text-sm font-black text-red-600 hover:bg-red-50 transition-colors text-center uppercase tracking-widest w-full">
+                Yes, Check Out
+            </button>
         </div>
     </div>
 </div>
-
+<?= $this->endSection(); ?>
 <?php if ($role === 'supervisor'): ?>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -212,95 +211,124 @@ $role = strtolower(trim(session()->get('employee_role') ?? ''));
 
 <?php endif; ?>
 
-
 <?php if ($role !== 'supervisor'): ?>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // HTMX පාවිච්චි කරන නිසා 'const' වෙනුවට 'var' පාවිච්චි කිරීම ආරක්ෂිතයි
+        if (typeof weeklyChartInstance === 'undefined') {
+            var weeklyChartInstance = null;
+        }
+        if (typeof statusChartInstance === 'undefined') {
+            var statusChartInstance = null;
+        }
 
-            // 1. Weekly Performance Bar Chart
-            const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
-            const weeklyLabels = <?= $chartLabels ?? '[]' ?>;
-            const weeklyValues = <?= $chartValues ?? '[]' ?>;
+        // චාර්ට් එක අඳින ප්‍රධාන ෆන්ක්ෂන් එක
+        function initDashboardCharts() {
+            // --- 1. Weekly Performance Bar Chart ---
+            var weeklyCanvas = document.getElementById('weeklyChart');
+            if (weeklyCanvas) {
+                var weeklyCtx = weeklyCanvas.getContext('2d');
 
-            new Chart(weeklyCtx, {
-                type: 'bar',
-                data: {
-                    labels: weeklyLabels.length > 0 ? weeklyLabels : ['No Data Yet'],
-                    datasets: [{
-                        label: 'Vehicles Completed',
-                        data: weeklyValues.length > 0 ? weeklyValues : [0],
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)', // Tailwind Blue 500
-                        borderRadius: 6,
-                        borderSkipped: false,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
+                // පරණ චාර්ට් එකක් තියෙනවා නම් ඒක අයින් කරනවා (Memory Leak/Error නැති වෙන්න)
+                if (weeklyChartInstance) {
+                    weeklyChartInstance.destroy();
+                }
+
+                var weeklyLabels = <?= $chartLabels ?? '[]' ?>;
+                var weeklyValues = <?= $chartValues ?? '[]' ?>;
+
+                weeklyChartInstance = new Chart(weeklyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: weeklyLabels.length > 0 ? weeklyLabels : ['No Data Yet'],
+                        datasets: [{
+                            label: 'Vehicles Completed',
+                            data: weeklyValues.length > 0 ? weeklyValues : [0],
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        },
-                        x: {
-                            grid: {
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
                                 display: false
                             }
-                        }
-                    }
-                }
-            });
-
-            // 2. Today's Distribution Doughnut Chart
-            const statusCtx = document.getElementById('statusChart').getContext('2d');
-
-            new Chart(statusCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Up Next', 'Active Now', 'Handed Over'],
-                    datasets: [{
-                        data: [<?= $assignedCount ?? 0 ?>, <?= $inProgressCount ?? 0 ?>, <?= $handedOverToday ?? 0 ?>],
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.9)', // Blue
-                            'rgba(249, 115, 22, 0.9)', // Orange
-                            'rgba(34, 197, 94, 0.9)' // Green
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: {
-                                    family: "'Inter', sans-serif",
-                                    weight: 'bold'
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
                                 }
                             }
                         }
                     }
+                });
+            }
+
+            // --- 2. Today's Distribution Doughnut Chart ---
+            var statusCanvas = document.getElementById('statusChart');
+            if (statusCanvas) {
+                var statusCtx = statusCanvas.getContext('2d');
+
+                if (statusChartInstance) {
+                    statusChartInstance.destroy();
                 }
-            });
+
+                statusChartInstance = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Up Next', 'Active Now', 'Handed Over'],
+                        datasets: [{
+                            data: [<?= $assignedCount ?? 0 ?>, <?= $inProgressCount ?? 0 ?>, <?= $handedOverToday ?? 0 ?>],
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.9)',
+                                'rgba(249, 115, 22, 0.9)',
+                                'rgba(34, 197, 94, 0.9)'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 20,
+                                    font: {
+                                        family: "'Inter', sans-serif",
+                                        weight: 'bold'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // පේජ් එක මුලින්ම ලෝඩ් වෙද්දී රන් කරන්න
+        document.addEventListener('DOMContentLoaded', function() {
+            initDashboardCharts();
+        });
+
+        // මචං, වැදගත්ම දේ: HTMX එකෙන් පේජ් එකේ කෑල්ලක් මාරු වුණොත් ආයෙත් චාර්ට් එක අඳින්න ඕනේ නම් මේ ලයිනර් එක තියන්න
+        document.addEventListener('htmx:afterSettle', function() {
+            initDashboardCharts();
         });
     </script>
 <?php endif; ?>
-
-
 
 <?= $this->endSection(); ?>

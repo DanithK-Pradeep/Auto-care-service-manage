@@ -8,7 +8,7 @@
             <?= esc(session()->get('admin_user')) ?>
         </span>
 
-        <a href="/admin/logout"
+        <a href="<?= site_url('admin/logout') ?>" 
            class="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded">
             Logout
         </a>

@@ -18,6 +18,7 @@ class BookingModel extends Model
         'message',
         'booking_date',
         'status',
+        'admin_note',
         'reject_reason',
         
         // --- Inspector 

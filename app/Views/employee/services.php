@@ -244,8 +244,13 @@
                                 <input id="spQty" type="number" min="1" value="1" class="mt-1 w-full rounded-xl border-gray-300" />
                             </div>
                             <div class="flex items-end">
+                                <?php
+                                $isLocked = ($active['status'] !== 'in_progress');
+                                ?>
                                 <button id="btnAddSpare"
-                                    class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700">
+                                    <?= $isLocked ? 'disabled' : '' ?>
+                                    class="px-4 py-2 rounded-xl text-sm font-bold text-white transition-all 
+               <?= $isLocked ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md' ?>">
                                     Add
                                 </button>
                             </div>
@@ -335,7 +340,7 @@
 
 <!-- Assign Next Modal -->
 <?= $this->section('modals'); ?>
-<div id="openassignNextModal" class="fixed inset-0 z-[9999] hidden overflow-y-auto bg-black/60 flex justify-center items-center p-4">
+<div id="openassignNextModal" class="fixed inset-0 z-[9999] hidden overflow-y-auto bg-black/60 flex justify-center items-start p-4">
     <div class="bg-white rounded-2xl p-8 max-w-xl w-full shadow-lg">
         <div class="flex items-start justify-between">
             <div>
@@ -347,10 +352,10 @@
 
         <div class="h-1 bg-red-600 mx-auto mt-4 mb-6"></div>
 
-        <form id="assignForm" action="<?= site_url('employee/assign_next') ?>" method="POST">
+        <form id="assignForm" action="<?= site_url('employee/assign_next') ?>" method="POST" onsubmit="handleAssignSubmit(event)"> <?= csrf_field() ?>
             <input type="hidden" name="assignment_id" id="assignmentIdInput" value="">
             <input type="hidden" name="booking_id" value="<?= esc($active['booking_id'] ?? '') ?>">
-            <input type="hidden" name="<?= csrf_token() ?>" value="<?= csrf_hash() ?>">
+
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -394,7 +399,7 @@
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    function initializeServicePage() {
 
         // Utility function for POST actions
         async function postAction(url, payload) {
@@ -411,6 +416,45 @@
             });
 
             return res.json();
+        }
+
+        async function handleAssignSubmit(e) {
+            e.preventDefault(); // පිටුව Redirect වීම නවත්වන ප්‍රධාන පේළිය
+
+            const form = e.target;
+            const btn = document.getElementById('assignSubmitBtn');
+            btn.disabled = true;
+            btn.innerText = 'Assigning...';
+
+            try {
+                const formData = new FormData(form);
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest' // මෙය නැවත තිබිය යුතුයි
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.message, "success");
+                    closeassignNextModal();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(data.message, "error");
+                    btn.disabled = false;
+                    btn.innerText = 'Assign';
+                }
+            } catch (err) {
+                console.error("AJAX Error:", err);
+                showToast("Submission failed", "error");
+                btn.disabled = false;
+                btn.innerText = 'Assign';
+            }
         }
 
 
@@ -471,14 +515,15 @@
 
                     const finishedText = document.getElementById('finishedAtText');
 
-                    if (finishedText) finishedText.innerText = data.completed_at;
+                    if (finishedText) finishedText.innerText = data.completed_at || "Processing...";
 
 
                     // Disable Spare Part Adding
                     const btnAddSpare = document.getElementById('btnAddSpare');
                     if (btnAddSpare) {
                         btnAddSpare.disabled = true;
-                        btnAddSpare.classList.add("opacity-50", "cursor-not-allowed");
+                        btnAddSpare.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        btnAddSpare.classList.add('bg-gray-400', 'cursor-not-allowed');
                     }
 
                     // Disable the Finish button itself
@@ -590,6 +635,18 @@
         }
 
         async function loadStations() {
+            const stationsSelectEl = document.getElementById('stationSelect');
+            const employeesSelectEl = document.getElementById('employeeSelect');
+
+            if (!stationsSelectEl) {
+                console.error('loadStations: stationSelect not found');
+                return;
+            }
+
+            if (employeesSelectEl) {
+                employeesSelectEl.innerHTML = `<option value="">Select employee</option>`;
+            }
+
             try {
                 const res = await fetch("<?= site_url('employee/services/stations') ?>", {
                     method: 'POST',
@@ -601,12 +658,12 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    stationsSelect.innerHTML = `<option value="">-- Select Station --</option>`;
+                    stationsSelectEl.innerHTML = `<option value="">-- Select Station --</option>`;
                     data.stations.forEach(s => {
                         const opt = document.createElement('option');
                         opt.value = s.id;
                         opt.textContent = `${s.name} - Bay ${s.bay_no}`;
-                        stationsSelect.appendChild(opt);
+                        stationsSelectEl.appendChild(opt);
                     });
                 }
             } catch (e) {
@@ -615,7 +672,17 @@
         }
 
         async function loadEmployees(stationId) {
+            const employeesSelectEl = document.getElementById('employeeSelect');
+
+            if (!employeesSelectEl) {
+                console.error('loadEmployees: employeeSelect not found');
+                return;
+            }
+
+            employeesSelectEl.innerHTML = `<option value="">Select employee</option>`;
+
             if (!stationId) return;
+
             try {
                 const res = await fetch("<?= site_url('employee/services/employees') ?>?station_id=" + stationId, {
                     headers: {
@@ -625,15 +692,20 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    employeesSelect.innerHTML = `<option value="">-- Select Employee --</option>`;
-                    data.employees.forEach(emp => {
-                        const opt = document.createElement('option');
-                        opt.value = emp.id;
-                        opt.textContent = `${emp.first_name} ${emp.last_name}`;
-                        employeesSelect.appendChild(opt);
-                    });
+                    employeesSelectEl.innerHTML = `<option value="">-- Select Employee --</option>`;
+                    if (data.employees && data.employees.length > 0) {
+                        data.employees.forEach(emp => {
+                            const opt = document.createElement('option');
+                            opt.value = emp.id;
+                            opt.textContent = `${emp.first_name} ${emp.last_name}`;
+                            employeesSelectEl.appendChild(opt);
+                        });
+                    } else {
+                        employeesSelectEl.innerHTML = `<option value="">No active employees found</option>`;
+                    }
                 }
             } catch (e) {
+                console.error('loadEmployees error', e);
                 showToast("Error loading employees", "error");
             }
         }
@@ -642,6 +714,7 @@
 
         window.assignNext = async function(assignmentId) {
             const finishBtn = document.getElementById('finishProcessBtn');
+            const assignModalEl = document.getElementById('openassignNextModal');
 
             // Logic Guard: Only handover if Finished
             if (finishBtn && !finishBtn.disabled) {
@@ -649,41 +722,66 @@
                 return;
             }
 
+            if (!assignModalEl) {
+                console.error('assignNext: modal element not found');
+                return;
+            }
+
             const inputId = document.getElementById('assignmentIdInput');
             if (inputId) inputId.value = assignmentId;
 
-            assignModal.classList.replace('hidden', 'flex');
+            assignModalEl.classList.replace('hidden', 'flex');
             await loadStations(); // Trigger first load
         };
 
         window.closeassignNextModal = () => {
-            assignModal.classList.replace('flex', 'hidden');
+            const assignModalEl = document.getElementById('openassignNextModal');
+            if (assignModalEl) {
+                assignModalEl.classList.replace('flex', 'hidden');
+            }
         };
 
         // When station dropdown changes, fetch its employees
-        stationsSelect?.addEventListener('change', (e) => loadEmployees(e.target.value));
+        document.body.addEventListener('change', (e) => {
+            const target = e.target;
+            if (target && target.id === 'stationSelect') {
+                loadEmployees(target.value);
+            }
+        });
 
         // Handle the final Assign POST
-        if (assignForm) {
-            assignForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
+        // --- Modal Handover Logic ඇතුළත ඇති පෝරමය පාලනය කරන කොටස ---
+        // --- Modal Handover Logic ඇතුළත ඇති පෝරමය පාලනය කරන කොටස ---
+        // මේක ඕනෑම තැනක (Global) තිබුණාට ප්‍රශ්නයක් නැහැ
+        document.addEventListener('submit', async function(e) {
+            // අපි බලමු submit වුණේ අපේ Assign Form එකද කියලා
+            if (e.target && e.target.id === 'assignForm') {
+                e.preventDefault(); // පිටුව Redirect වීම නවත්වන ප්‍රධාන පේළිය
 
+                console.log("AJAX submission started..."); // පරීක්ෂාව 1
+
+                const form = e.target;
                 const btn = document.getElementById('assignSubmitBtn');
+
+                if (btn.disabled) return;
                 btn.disabled = true;
                 btn.innerText = 'Assigning...';
 
                 try {
-                    const res = await fetch(this.action, {
+                    const formData = new FormData(form);
+                    const res = await fetch(form.action, {
                         method: 'POST',
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest' // Controller එකට AJAX බව පවසන Header එක
                         },
-                        body: new FormData(this)
+                        body: formData
                     });
+
                     const data = await res.json();
+                    console.log("Response received:", data); // පරීක්ෂාව 2
 
                     if (data.success) {
-                        showToast("Handover Successful!", "success");
+                        showToast(data.message, "success");
                         closeassignNextModal();
                         setTimeout(() => {
                             window.location.reload();
@@ -693,12 +791,14 @@
                         btn.disabled = false;
                         btn.innerText = 'Assign';
                     }
-                } catch (e) {
-                    showToast("Network Error", "error");
+                } catch (err) {
+                    console.error("Fetch Error:", err);
+                    showToast("Something went wrong with the request.", "error");
                     btn.disabled = false;
+                    btn.innerText = 'Assign';
                 }
-            });
-        }
+            }
+        });
 
 
 
@@ -907,9 +1007,9 @@
             loadCategories();
             loadUsage();
         }
+    }
 
-
-    })
+    initializeServicePage();
 </script>
 
 <?= $this->endSection(); ?>
