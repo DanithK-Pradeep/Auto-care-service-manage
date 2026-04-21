@@ -1,0 +1,59 @@
+services:
+  app:
+    build: .
+    container_name: autocare-app
+    ports:
+      - "8080:80"
+    environment:
+      CI_ENVIRONMENT: production
+      app.baseURL: http://localhost:8080/
+      app.forceGlobalSecureRequests: false
+      app.CSPEnabled: false
+      database.default.hostname: mysql
+      database.default.database: autocare
+      database.default.username: ${MYSQL_USER}
+      database.default.password: ${MYSQL_PASSWORD}
+      database.default.DBDriver: MySQLi
+      database.default.port: 3306
+      database.default.charset: utf8mb4
+      database.default.collation: utf8mb4_general_ci
+      encryption.key: ${ENCRYPTION_KEY}
+      logger.threshold: 4
+    volumes:
+      - ./writable:/var/www/html/writable
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - autocare-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: autocare-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: autocare
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - autocare-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+      start_period: 40s
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  autocare-network:
+    driver: bridge

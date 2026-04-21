@@ -124,3 +124,9 @@ _modules/*
 
 /results/
 /phpunit*.xml
+
+# Terraform files
+**/.terraform/*
+*.tfstate
+*.tfstate.backup
+**/.terraform.lock.hcl
